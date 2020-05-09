@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Svelto.Common_3", "Svelto.Common_3.csproj", "{d4d0a330-1361-0a68-a03e-0ad685679f9f}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Svelto.ECS", "Svelto.ECS.csproj", "{f6892257-d487-d5b8-89b6-be8986bde601}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests.csproj", "{136058ab-15d6-c48f-c66d-3194bd5626de}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Svelto.Pool.Debugger_3", "Svelto.Pool.Debugger_3.csproj", "{85cb3516-a6b0-50cc-7cd7-c13f038b229d}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{d4d0a330-1361-0a68-a03e-0ad685679f9f}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{d4d0a330-1361-0a68-a03e-0ad685679f9f}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{d4d0a330-1361-0a68-a03e-0ad685679f9f}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{d4d0a330-1361-0a68-a03e-0ad685679f9f}.Release|Any CPU.Build.0 = Release|Any CPU
+		{f6892257-d487-d5b8-89b6-be8986bde601}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{f6892257-d487-d5b8-89b6-be8986bde601}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{f6892257-d487-d5b8-89b6-be8986bde601}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{f6892257-d487-d5b8-89b6-be8986bde601}.Release|Any CPU.Build.0 = Release|Any CPU
+		{136058ab-15d6-c48f-c66d-3194bd5626de}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{136058ab-15d6-c48f-c66d-3194bd5626de}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{136058ab-15d6-c48f-c66d-3194bd5626de}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{136058ab-15d6-c48f-c66d-3194bd5626de}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85cb3516-a6b0-50cc-7cd7-c13f038b229d}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85cb3516-a6b0-50cc-7cd7-c13f038b229d}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85cb3516-a6b0-50cc-7cd7-c13f038b229d}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85cb3516-a6b0-50cc-7cd7-c13f038b229d}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
