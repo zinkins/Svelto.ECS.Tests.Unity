@@ -14,10 +14,12 @@ namespace Svelto.ECS.Extensions.Unity
             foreach (var engine in Systems)
                 (engine as SyncSveltoToUECSEngine).externalHandle = _jobHandle;
             
-            UnityEngine.PlayerLoop.Update();
+            Update();
             
             return _jobHandle;
         }
+        
+        public string name => nameof(SyncSveltoToUECSGroup);
 
         readonly SimulationSystemGroup _simulationSystemGroup;
     }

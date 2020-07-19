@@ -4,6 +4,7 @@
         "Unity.Entities",
         "Unity.Collections",
         "Unity.Burst",
+        "Unity.Jobs",
         "Svelto.Common_3"
     ],
     "includePlatforms": [],
@@ -25,6 +26,16 @@
             "name": "com.unity.burst",
             "expression": "",
             "define": "UNITY_BURST"
+        },
+        {
+            "name": "com.unity.collections",
+            "expression": "",
+            "define": "UNITY_COLLECTIONS"
+        },
+        {
+            "name": "com.unity.jobs",
+            "expression": "",
+            "define": "UNITY_JOBS"
         }
     ],
     "noEngineReferences": false

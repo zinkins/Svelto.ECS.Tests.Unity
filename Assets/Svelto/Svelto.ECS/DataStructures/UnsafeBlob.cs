@@ -66,46 +66,49 @@ namespace Svelto.ECS.DataStructures
                                    , restCount);
                 }
 
-                var paddedStructSize = Align4(structSize);
+                //this is may seems a waste if you are going to use an unsafeBlob just for bytes, but it's necessary for mixed types.
+                //it's still possible to use WriteUnaligned though
+                var paddedStructSize = MemoryUtilities.Align4(structSize);
 
                 _writeIndex += paddedStructSize;
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void WriteUnaligned<T>(in T item) where T : struct
-        {
-            unsafe
-            {
-                var structSize = (uint) MemoryUtilities.SizeOf<T>();
-
-                //the idea is, considering the wrap, a read pointer must always be behind a writer pointer
-#if DEBUG && !PROFILE_SVELTO
-                if (space - (int) structSize < 0)
-                    throw new Exception("no writing authorized");
-#endif
-                var pointer = _writeIndex % capacity;
-
-                if (pointer + structSize <= capacity)
-                {
-                    Unsafe.Write(ptr + pointer, item);
-                }
-                else
-                {
-                    var byteCount = capacity - pointer;
-
-                    var localCopyToAvoidGCIssues = item;
-
-                    Unsafe.CopyBlockUnaligned(ptr + pointer, Unsafe.AsPointer(ref localCopyToAvoidGCIssues), byteCount);
-
-                    var restCount = structSize - byteCount;
-                    Unsafe.CopyBlockUnaligned(ptr, (byte*) Unsafe.AsPointer(ref localCopyToAvoidGCIssues) + byteCount
-                                            , restCount);
-                }
-
-                _writeIndex += structSize;
-            }
-        }
+//         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//         //ToDo: remove this and create an UnsafeBlobUnaligned, used on NativeRingBuffer where T cannot change
+//         internal void WriteUnaligned<T>(in T item) where T : struct
+//         {
+//             unsafe
+//             {
+//                 var structSize = (uint) MemoryUtilities.SizeOf<T>();
+//
+//                 //the idea is, considering the wrap, a read pointer must always be behind a writer pointer
+// #if DEBUG && !PROFILE_SVELTO
+//                 if (space - (int) structSize < 0)
+//                     throw new Exception("no writing authorized");
+// #endif
+//                 var pointer = _writeIndex % capacity;
+//
+//                 if (pointer + structSize <= capacity)
+//                 {
+//                     Unsafe.Write(ptr + pointer, item);
+//                 }
+//                 else
+//                 {
+//                     var byteCount = capacity - pointer;
+//
+//                     var localCopyToAvoidGCIssues = item;
+//
+//                     Unsafe.CopyBlockUnaligned(ptr + pointer, Unsafe.AsPointer(ref localCopyToAvoidGCIssues), byteCount);
+//
+//                     var restCount = structSize - byteCount;
+//                     Unsafe.CopyBlockUnaligned(ptr, (byte*) Unsafe.AsPointer(ref localCopyToAvoidGCIssues) + byteCount
+//                                             , restCount);
+//                 }
+//
+//                 _writeIndex += structSize;
+//             }
+//         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal T Read<T>() where T : struct
@@ -121,7 +124,7 @@ namespace Svelto.ECS.DataStructures
                     throw new Exception("unexpected read");
 #endif
                 var head             = _readIndex % capacity;
-                var paddedStructSize = Align4(structSize);
+                var paddedStructSize = MemoryUtilities.Align4(structSize);
                 _readIndex += paddedStructSize;
 
                 if (_readIndex == _writeIndex)
@@ -169,7 +172,7 @@ namespace Svelto.ECS.DataStructures
                   , index    = _writeIndex
                 };
 
-                var align4 = Align4(sizeOf);
+                var align4 = MemoryUtilities.Align4(sizeOf);
                 _writeIndex += align4;
 
                 return ref buffer;
@@ -196,7 +199,7 @@ namespace Svelto.ECS.DataStructures
             unsafe
             {
                 //be sure it's multiple of 4. Assuming that what we write is aligned to 4, then we will always have aligned wrapped heads
-                newCapacity = Align4(newCapacity);
+                newCapacity = MemoryUtilities.Align4(newCapacity);
 
                 byte* newPointer = null;
 #if DEBUG && !PROFILE_SVELTO
@@ -261,8 +264,6 @@ namespace Svelto.ECS.DataStructures
             _writeIndex = 0;
             _readIndex  = 0;
         }
-
-        uint Align4(uint input) { return (uint) (Math.Ceiling(input / 4.0) * 4); }
 
         uint _writeIndex, _readIndex;
     }

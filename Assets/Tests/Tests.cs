@@ -41,7 +41,7 @@ namespace Tests
         [Test]
         public void NativeFactory()
         {
-            var init = _enginesRoot.GenerateEntityFactory().ToNative<TestEntityDescriptor>().BuildEntity(new EGID(0, group), 0);
+            var init = _enginesRoot.GenerateEntityFactory().ToNative<TestEntityDescriptor>("test").BuildEntity(new EGID(0, group), 0);
             init.Init(new UnmanagedComponent() {test = 2});
             _simpleEntitiesSubmissionScheduler.SubmitEntities();
 

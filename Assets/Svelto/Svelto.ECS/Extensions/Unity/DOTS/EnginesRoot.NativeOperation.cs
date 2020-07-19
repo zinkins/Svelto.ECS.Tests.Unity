@@ -19,30 +19,30 @@ namespace Svelto.ECS
         readonly AtomicNativeBags _swapOperationQueue =
             new AtomicNativeBags(Common.Allocator.Persistent, JobsUtility.MaxJobThreadCount + 1);
 
-        NativeEntityRemove ProvideNativeEntityRemoveQueue<T>() where T : IEntityDescriptor, new()
+        NativeEntityRemove ProvideNativeEntityRemoveQueue<T>(string memberName) where T : IEntityDescriptor, new()
         {
             //todo: remove operation array and store entity descriptor hash in the return value
             //todo I maybe able to provide a  _nativeSwap.SwapEntity<entityDescriptor> 
             _nativeRemoveOperations.Add(
-                new NativeOperationRemove(EntityDescriptorTemplate<T>.descriptor.componentsToBuild));
+                new NativeOperationRemove(EntityDescriptorTemplate<T>.descriptor.componentsToBuild, TypeCache<T>.type, memberName));
 
             return new NativeEntityRemove(_removeOperationQueue, _nativeRemoveOperations.count - 1);
         }
         
-        NativeEntitySwap ProvideNativeEntitySwapQueue<T>() where T : IEntityDescriptor, new()
+        NativeEntitySwap ProvideNativeEntitySwapQueue<T>(string memberName) where T : IEntityDescriptor, new()
         {
             //todo: remove operation array and store entity descriptor hash in the return value
             _nativeSwapOperations.Add(
-                new NativeOperationSwap(EntityDescriptorTemplate<T>.descriptor.componentsToBuild));
+                new NativeOperationSwap(EntityDescriptorTemplate<T>.descriptor.componentsToBuild, TypeCache<T>.type, memberName));
 
             return new NativeEntitySwap(_swapOperationQueue, _nativeSwapOperations.count - 1);
         }
 
-        NativeEntityFactory ProvideNativeEntityFactoryQueue<T>() where T : IEntityDescriptor, new()
+        NativeEntityFactory ProvideNativeEntityFactoryQueue<T>(string memberName) where T : IEntityDescriptor, new()
         {
             //todo: remove operation array and store entity descriptor hash in the return value
             _nativeAddOperations.Add(
-                new NativeOperationBuild(EntityDescriptorTemplate<T>.descriptor.componentsToBuild));
+                new NativeOperationBuild(EntityDescriptorTemplate<T>.descriptor.componentsToBuild, TypeCache<T>.type));
 
             return new NativeEntityFactory(_addOperationQueue, _nativeAddOperations.count - 1);
         }
@@ -59,10 +59,10 @@ namespace Svelto.ECS
                     {
                         var componentsIndex = buffer.Dequeue<uint>();
                         var entityEGID = buffer.Dequeue<EGID>();
-                        CheckRemoveEntityID(entityEGID); 
+                        CheckRemoveEntityID(entityEGID, _nativeRemoveOperations[componentsIndex].type); 
                         QueueEntitySubmitOperation(new EntitySubmitOperation(
                                                        EntitySubmitOperationType.Remove, entityEGID, entityEGID
-                                                     , _nativeRemoveOperations[componentsIndex].ComponentComponents));
+                                                     , _nativeRemoveOperations[componentsIndex].components));
                     }
                 }
 
@@ -75,12 +75,12 @@ namespace Svelto.ECS
                         var     componentsIndex = buffer.Dequeue<uint>();
                         var entityEGID      = buffer.Dequeue<DoubleEGID>();
                         
-                        CheckRemoveEntityID(entityEGID.@from);
-                        CheckAddEntityID(entityEGID.to); 
+                        CheckRemoveEntityID(entityEGID.@from, _nativeSwapOperations[componentsIndex].type, _nativeSwapOperations[componentsIndex].caller );
+                        CheckAddEntityID(entityEGID.to, _nativeSwapOperations[componentsIndex].type, _nativeSwapOperations[componentsIndex].caller); 
                         
                         QueueEntitySubmitOperation(new EntitySubmitOperation(
                                                        EntitySubmitOperationType.Swap, entityEGID.@from, entityEGID.to
-                                                     , _nativeSwapOperations[componentsIndex].ComponentComponents));
+                                                     , _nativeSwapOperations[componentsIndex].components));
                     }
                 }
             }
@@ -98,7 +98,7 @@ namespace Svelto.ECS
                         var componentCounts = buffer.Dequeue<uint>();
                         
                         EntityComponentInitializer init =
-                            BuildEntity(egid, _nativeAddOperations[componentsIndex].components);
+                            BuildEntity(egid, _nativeAddOperations[componentsIndex].components, _nativeAddOperations[componentsIndex].type);
 
                         //only called if Init is called on the initialized (there is something to init)
                         while (componentCounts > 0)
@@ -144,48 +144,40 @@ namespace Svelto.ECS
     readonly struct NativeOperationBuild
     {
         internal readonly IComponentBuilder[] components;
+        internal readonly Type type;
 
-        public NativeOperationBuild(IComponentBuilder[] descriptorComponentsToBuild)
+        public NativeOperationBuild(IComponentBuilder[] descriptorComponentsToBuild, Type entityType)
         {
-#if DEBUG && !PROFILE_SVELTO            
-            for (int i = 0; i < descriptorComponentsToBuild.Length; ++i)
-                if (descriptorComponentsToBuild[i].IsUnmanaged == false)
-                    throw new NotSupportedException();
-#endif
-            
+            type = entityType;
             components = descriptorComponentsToBuild;
         }
     }
 
     readonly struct NativeOperationRemove
     {
-        internal readonly IComponentBuilder[] ComponentComponents;
-
-        public NativeOperationRemove(IComponentBuilder[] descriptorComponentsToRemove)
+        internal readonly IComponentBuilder[] components;
+        internal readonly Type type;
+        internal readonly string caller;
+        
+        public NativeOperationRemove(IComponentBuilder[] descriptorComponentsToRemove, Type entityType, string caller)
         {
-#if DEBUG && !PROFILE_SVELTO            
-            for (int i = 0; i < descriptorComponentsToRemove.Length; ++i)
-                if (descriptorComponentsToRemove[i].IsUnmanaged == false)
-                    throw new NotSupportedException();
-#endif
-            
-            ComponentComponents = descriptorComponentsToRemove;
+            this.caller = caller;
+            components = descriptorComponentsToRemove;
+            type = entityType;
         }
     }
 
     readonly struct NativeOperationSwap
     {
-        internal readonly IComponentBuilder[] ComponentComponents;
+        internal readonly IComponentBuilder[] components;
+        internal readonly Type type;
+        internal readonly string caller;
 
-        public NativeOperationSwap(IComponentBuilder[] descriptorComponentsToSwap)
+        public NativeOperationSwap(IComponentBuilder[] descriptorComponentsToSwap, Type entityType, string caller)
         {
-#if DEBUG && !PROFILE_SVELTO            
-            for (int i = 0; i < descriptorComponentsToSwap.Length; ++i)
-                if (descriptorComponentsToSwap[i].IsUnmanaged == false)
-                    throw new NotSupportedException();
-#endif
-            
-            ComponentComponents = descriptorComponentsToSwap;
+            this.caller = caller;
+            components = descriptorComponentsToSwap;
+            type = entityType;
         }
     }
 }

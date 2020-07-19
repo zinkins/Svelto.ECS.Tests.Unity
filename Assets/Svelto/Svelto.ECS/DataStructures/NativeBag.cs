@@ -17,7 +17,7 @@ namespace Svelto.ECS.DataStructures
     /// </summary>
     public struct NativeBag : IDisposable
     {
-#if UNITY_BURST
+#if UNITY_COLLECTIONS
         [global::Unity.Collections.LowLevel.Unsafe.NativeDisableUnsafePtrRestriction]
 #endif
         unsafe UnsafeBlob* _queue;
@@ -103,7 +103,7 @@ namespace Svelto.ECS.DataStructures
 #endif
                 var sizeOf = MemoryUtilities.SizeOf<T>();
                 if (_queue->space - sizeOf < 0)
-                    _queue->Realloc((uint) ((uint) (((_queue->capacity + sizeOf) / sizeOf) * 1.5f) * sizeOf));
+                    _queue->Realloc((uint) ((_queue->capacity + sizeOf) * 2.0f));
 
                 return ref _queue->Reserve<T>(out index);
             }
@@ -120,7 +120,7 @@ namespace Svelto.ECS.DataStructures
 #endif
                 var sizeOf = MemoryUtilities.SizeOf<T>();
                 if (_queue->space - sizeOf < 0)
-                    _queue->Realloc((uint) ((uint) (((_queue->capacity + sizeOf) / sizeOf) * 1.5f) * sizeOf));
+                    _queue->Realloc((uint) ((_queue->capacity + MemoryUtilities.Align4((uint) sizeOf)) * 2.0f));
 
                 _queue->Write(item);
             }
