@@ -71,11 +71,11 @@ namespace Tests
 
         public void Test()
         {
-            var test = entitiesDB.QueryEntities<UnmanagedComponent>(group);
+            var (buffer, count) = entitiesDB.QueryEntities<UnmanagedComponent>(@group);
 
-            foreach (ref var component in test)
+            for (int i = 0; i < count; ++i)
             {
-                component.test = 1;
+                buffer[i].test = 1;
             }
         }
     }
