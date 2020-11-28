@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using NUnit.Framework;
 using Svelto.ECS;
-using UnityEngine.TestTools;
+using Svelto.ECS.Schedulers;
 
 ///Note: these tests are only meant to test the code on several platforms. The extensive test coveage of Svelto.ECS
 /// is found at https://github.com/sebas77/Svelto.ECS.Tests
