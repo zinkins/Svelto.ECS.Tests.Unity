@@ -4,3 +4,4 @@ Temp/
 obj/
 *.log
 Packages/packages-lock.json
+InitTestScene*.*
