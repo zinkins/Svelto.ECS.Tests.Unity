@@ -49,6 +49,10 @@ namespace Svelto.ECS.Internal
 #endif
         )
         {
+#if DEBUG && !PROFILE_SVELTO            
+            DBC.ECS.Check.Require(componentBuilders != null, $"Invalid Entity Descriptor {descriptorType}");
+#endif            
+            
             var numberOfComponents = componentBuilders.Length;
 
 #if DEBUG && !PROFILE_SVELTO

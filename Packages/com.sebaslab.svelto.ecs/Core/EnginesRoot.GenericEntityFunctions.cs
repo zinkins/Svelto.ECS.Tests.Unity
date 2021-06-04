@@ -112,34 +112,32 @@ namespace Svelto.ECS
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SwapEntityGroup<T>(EGID fromID, ExclusiveBuildGroup toGroupID
-              , ExclusiveBuildGroup mustBeFromGroup)
+            public void SwapEntityGroup<T>(EGID fromID, ExclusiveBuildGroup mustBeFromGroup, ExclusiveBuildGroup toGroupID)
                 where T : IEntityDescriptor, new()
             {
                 if (fromID.groupID != mustBeFromGroup)
-                    throw new ECSException("Entity is not coming from the expected group");
+                    throw new ECSException($"Entity is not coming from the expected group. Expected {mustBeFromGroup} is {fromID.groupID}");
 
                 SwapEntityGroup<T>(fromID, toGroupID);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SwapEntityGroup<T>(EGID fromID, EGID toID
-              , ExclusiveBuildGroup mustBeFromGroup)
+            public void SwapEntityGroup<T>(EGID fromID, EGID toID, ExclusiveBuildGroup mustBeFromGroup)
                 where T : IEntityDescriptor, new()
             {
                 if (fromID.groupID != mustBeFromGroup)
-                    throw new ECSException("Entity is not coming from the expected group");
+                    throw new ECSException($"Entity is not coming from the expected group Expected {mustBeFromGroup} is {fromID.groupID}");
 
                 SwapEntityGroup<T>(fromID, toID);
             }
 
 #if UNITY_NATIVE
-            public NativeEntityRemove ToNativeRemove<T>(string memberName) where T : IEntityDescriptor, new()
+            public Svelto.ECS.Native.NativeEntityRemove ToNativeRemove<T>(string memberName) where T : IEntityDescriptor, new()
             {
                 return _enginesRoot.Target.ProvideNativeEntityRemoveQueue<T>(memberName);
             }
 
-            public NativeEntitySwap ToNativeSwap<T>(string memberName) where T : IEntityDescriptor, new()
+            public Svelto.ECS.Native.NativeEntitySwap ToNativeSwap<T>(string memberName) where T : IEntityDescriptor, new()
             {
                 return _enginesRoot.Target.ProvideNativeEntitySwapQueue<T>(memberName);
             }

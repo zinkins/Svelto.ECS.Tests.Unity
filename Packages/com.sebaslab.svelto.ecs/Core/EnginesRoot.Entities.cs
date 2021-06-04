@@ -17,7 +17,6 @@ namespace Svelto.ECS
         }
 
         public IEntityFactory GenerateEntityFactory() { return new GenericEntityFactory(this); }
-
         public IEntityFunctions GenerateEntityFunctions() { return new GenericEntityFunctions(this); }
 
         ///--------------------------------------------
@@ -26,19 +25,20 @@ namespace Svelto.ECS
                                     , IEnumerable<object> implementors = null)
         {
             CheckAddEntityID(entityID, descriptorType);
-            
+
             DBC.ECS.Check.Require(entityID.groupID != 0
                         , "invalid group detected, are you using new ExclusiveGroupStruct() instead of new ExclusiveGroup()?");
-            
-            CreateReferenceLocator(entityID);
+
+            var reference = _entityLocator.ClaimReference();
+            _entityLocator.SetReference(reference, entityID);
 
             var dic = EntityFactory.BuildGroupedEntities(entityID, _groupedEntityToAdd, componentsToBuild, implementors
 #if DEBUG && !PROFILE_SVELTO
                                                        , descriptorType
-#endif                                                         
+#endif
                                                          );
 
-            return new EntityInitializer(entityID, dic);
+            return new EntityInitializer(entityID, dic, reference);
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Svelto.ECS
 
             PreallocateDBGroup();
             PreallocateEntitiesToAdd();
-            PreallocateReferenceMaps(groupID, numberOfEntities);
+            _entityLocator.PreallocateReferenceMaps(groupID, numberOfEntities);
         }
 
         ///--------------------------------------------
@@ -114,8 +114,8 @@ namespace Svelto.ECS
                 if (toEntityGID.HasValue)
                 {
                     var entityGid = toEntityGID.Value;
-                    UpdateEntityReference(fromEntityGID, entityGid);
-                    
+                    _entityLocator.UpdateEntityReference(fromEntityGID, entityGid);
+
                     var toGroupID = entityGid.groupID;
 
                     toGroup = GetOrCreateDBGroup(toGroupID);
@@ -127,7 +127,7 @@ namespace Svelto.ECS
                 }
                 else
                 {
-                    RemoveEntityReference(fromEntityGID);
+                    _entityLocator.RemoveEntityReference(fromEntityGID);
                 }
 
                 //call all the callbacks
@@ -224,7 +224,7 @@ namespace Svelto.ECS
                 FasterDictionary<RefWrapperType, ITypeSafeDictionary> fromGroup = GetDBGroup(fromIdGroupId);
                 FasterDictionary<RefWrapperType, ITypeSafeDictionary> toGroup   = GetOrCreateDBGroup(toGroupId);
 
-                UpdateAllGroupReferenceLocators(fromIdGroupId, toGroupId);
+                _entityLocator.UpdateAllGroupReferenceLocators(fromIdGroupId, toGroupId);
 
                 foreach (var dictionaryOfEntities in fromGroup)
                 {
@@ -233,9 +233,9 @@ namespace Svelto.ECS
                                                     , dictionaryOfEntities.Value);
 
                     var groupsOfEntityType = _groupsPerEntity[dictionaryOfEntities.Key];
-
                     var groupOfEntitiesToCopyAndClear = groupsOfEntityType[fromIdGroupId];
-                    toEntitiesDictionary.AddEntitiesFromDictionary(groupOfEntitiesToCopyAndClear, toGroupId);
+
+                    toEntitiesDictionary.AddEntitiesFromDictionary(groupOfEntitiesToCopyAndClear, toGroupId, this);
 
                     //call all the MoveTo callbacks
                     dictionaryOfEntities.Value.ExecuteEnginesAddOrSwapCallbacks(_reactiveEnginesSwap
@@ -259,7 +259,7 @@ namespace Svelto.ECS
             return fromGroup;
         }
 
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         FasterDictionary<RefWrapperType, ITypeSafeDictionary> GetOrCreateDBGroup
             (ExclusiveGroupStruct toGroupId)
@@ -301,7 +301,7 @@ namespace Svelto.ECS
 
         void RemoveEntitiesFromGroup(ExclusiveGroupStruct groupID, in PlatformProfiler profiler)
         {
-            RemoveAllGroupReferenceLocators(groupID);
+            _entityLocator.RemoveAllGroupReferenceLocators(groupID);
 
             if (_groupEntityComponentsDB.TryGetValue(groupID, out var dictionariesOfEntities))
             {

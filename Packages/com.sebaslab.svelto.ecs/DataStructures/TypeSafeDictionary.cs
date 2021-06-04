@@ -8,14 +8,15 @@ namespace Svelto.ECS.Internal
 {
     sealed class TypeSafeDictionary<TValue> : ITypeSafeDictionary<TValue> where TValue : struct, IEntityComponent
     {
-        static readonly Type   _type     = typeof(TValue);
-        static readonly string _typeName = _type.Name;
-        static readonly bool   _hasEgid  = typeof(INeedEGID).IsAssignableFrom(_type);
+        static readonly Type   _type         = typeof(TValue);
+        static readonly string _typeName     = _type.Name;
+        static readonly bool   _hasEgid      = typeof(INeedEGID).IsAssignableFrom(_type);
+        static readonly bool   _hasReference = typeof(INeedEntityReference).IsAssignableFrom(_type);
 
         internal static readonly bool IsUnmanaged =
             _type.IsUnmanagedEx() && (typeof(IEntityViewComponent).IsAssignableFrom(_type) == false);
 
-        SveltoDictionary<uint, TValue, NativeStrategy<SveltoDictionaryNode<uint>>, ManagedStrategy<TValue>,
+        internal SveltoDictionary<uint, TValue, ManagedStrategy<SveltoDictionaryNode<uint>>, ManagedStrategy<TValue>,
             ManagedStrategy<int>> implMgd;
 
         //used directly by native methods
@@ -26,11 +27,11 @@ namespace Svelto.ECS.Internal
         {
             if (IsUnmanaged)
                 implUnmgd = new SveltoDictionary<uint, TValue, NativeStrategy<SveltoDictionaryNode<uint>>,
-                    NativeStrategy<TValue>, NativeStrategy<int>>(size);
+                    NativeStrategy<TValue>, NativeStrategy<int>>(size, Allocator.Persistent);
             else
             {
-                implMgd = new SveltoDictionary<uint, TValue, NativeStrategy<SveltoDictionaryNode<uint>>,
-                    ManagedStrategy<TValue>, ManagedStrategy<int>>(size);
+                implMgd = new SveltoDictionary<uint, TValue, ManagedStrategy<SveltoDictionaryNode<uint>>,
+                    ManagedStrategy<TValue>, ManagedStrategy<int>>(size, Allocator.Managed);
             }
         }
 
@@ -42,25 +43,70 @@ namespace Svelto.ECS.Internal
             else
                 implMgd.Add(egidEntityId, entityComponent);
         }
-
-        /// <summary>
-        ///     Add entities from external typeSafeDictionary
-        /// </summary>
-        /// <param name="entitiesToSubmit"></param>
-        /// <param name="groupId"></param>
-        /// <exception cref="TypeSafeDictionaryException"></exception>
-        public void AddEntitiesFromDictionary(ITypeSafeDictionary entitiesToSubmit, uint groupId)
+        
+        /// todo: Is this really needed, cannot I just use AddEntitiesFromDictionary? Needs to be checked
+        public void AddEntityToDictionary(EGID fromEntityGid, EGID toEntityID, ITypeSafeDictionary toGroup)
         {
             if (IsUnmanaged)
             {
-                var typeSafeDictionary = (entitiesToSubmit as TypeSafeDictionary<TValue>).implUnmgd;
+                var valueIndex = implUnmgd.GetIndex(fromEntityGid.entityID);
+
+                DBC.ECS.Check.Require(toGroup != null
+                                    , "Invalid To Group"); //todo check this, if it's right merge GetIndex
+                {
+                    var     toGroupCasted = toGroup as ITypeSafeDictionary<TValue>;
+                    ref var entity        = ref implUnmgd.GetDirectValueByRef(valueIndex);
+
+                    if (_hasEgid)
+                        SetEGIDWithoutBoxing<TValue>.SetIDWithoutBoxing(ref entity, toEntityID);
+
+                    toGroupCasted.Add(toEntityID.entityID, entity);
+                }
+            }
+            else
+            {
+                var valueIndex = implMgd.GetIndex(fromEntityGid.entityID);
+
+                DBC.ECS.Check.Require(toGroup != null
+                                    , "Invalid To Group"); //todo check this, if it's right merge GetIndex
+                {
+                    var     toGroupCasted = toGroup as ITypeSafeDictionary<TValue>;
+                    ref var entity        = ref implMgd.GetDirectValueByRef(valueIndex);
+
+                    if (_hasEgid)
+                        SetEGIDWithoutBoxing<TValue>.SetIDWithoutBoxing(ref entity, toEntityID);
+
+                    toGroupCasted.Add(toEntityID.entityID, entity);
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Add entities from external typeSafeDictionary (todo: add use case)
+        /// </summary>
+        /// <param name="entitiesToSubmit"></param>
+        /// <param name="groupId"></param>
+        /// <param name="enginesRoot"></param>
+        /// <exception cref="TypeSafeDictionaryException"></exception>
+        public void AddEntitiesFromDictionary
+            (ITypeSafeDictionary entitiesToSubmit, uint groupId, EnginesRoot enginesRoot)
+        {
+            var safeDictionary = (entitiesToSubmit as TypeSafeDictionary<TValue>);
+            if (IsUnmanaged)
+            {
+                var typeSafeDictionary = safeDictionary.implUnmgd;
 
                 foreach (var tuple in typeSafeDictionary)
                     try
                     {
+                        var egid = new EGID(tuple.Key, groupId);
                         if (_hasEgid)
                             SetEGIDWithoutBoxing<TValue>.SetIDWithoutBoxing(
-                                ref tuple.Value, new EGID(tuple.Key, groupId));
+                                ref tuple.Value, egid);
+                        
+                        if (_hasReference)
+                            SetEGIDWithoutBoxing<TValue>.SetRefWithoutBoxing(
+                                ref tuple.Value, enginesRoot.entityLocator.GetEntityReference(egid));
 
                         implUnmgd.Add(tuple.Key, tuple.Value);
                     }
@@ -74,7 +120,7 @@ namespace Svelto.ECS.Internal
             }
             else
             {
-                var typeSafeDictionary = (entitiesToSubmit as TypeSafeDictionary<TValue>).implMgd;
+                var typeSafeDictionary = safeDictionary.implMgd;
 
                 foreach (var tuple in typeSafeDictionary)
                     try
@@ -119,42 +165,6 @@ namespace Svelto.ECS.Internal
                     ExecuteEnginesAddOrSwapCallbacksOnSingleEntity(entityComponentEnginesDB
                                                                  , ref typeSafeDictionary[value.Key], fromGroup
                                                                  , in profiler, new EGID(value.Key, toGroup));
-            }
-        }
-
-        public void AddEntityToDictionary(EGID fromEntityGid, EGID toEntityID, ITypeSafeDictionary toGroup)
-        {
-            if (IsUnmanaged)
-            {
-                var valueIndex = implUnmgd.GetIndex(fromEntityGid.entityID);
-
-                DBC.ECS.Check.Require(toGroup != null
-                                    , "Invalid To Group"); //todo check this, if it's right merge GetIndex
-                {
-                    var     toGroupCasted = toGroup as ITypeSafeDictionary<TValue>;
-                    ref var entity        = ref implUnmgd.GetDirectValueByRef(valueIndex);
-
-                    if (_hasEgid)
-                        SetEGIDWithoutBoxing<TValue>.SetIDWithoutBoxing(ref entity, toEntityID);
-
-                    toGroupCasted.Add(toEntityID.entityID, entity);
-                }
-            }
-            else
-            {
-                var valueIndex = implMgd.GetIndex(fromEntityGid.entityID);
-
-                DBC.ECS.Check.Require(toGroup != null
-                                    , "Invalid To Group"); //todo check this, if it's right merge GetIndex
-                {
-                    var     toGroupCasted = toGroup as ITypeSafeDictionary<TValue>;
-                    ref var entity        = ref implMgd.GetDirectValueByRef(valueIndex);
-
-                    if (_hasEgid)
-                        SetEGIDWithoutBoxing<TValue>.SetIDWithoutBoxing(ref entity, toEntityID);
-
-                    toGroupCasted.Add(toEntityID.entityID, entity);
-                }
             }
         }
 
@@ -281,6 +291,7 @@ namespace Svelto.ECS.Internal
                     var toGroupCasted = toGroup as ITypeSafeDictionary<TValue>;
                     var previousGroup = fromEntityGid.groupID;
 
+                    //todo: why is setting the EGID if this code just execute callbacks?
                     if (_hasEgid)
                         SetEGIDWithoutBoxing<TValue>.SetIDWithoutBoxing(ref entity, toEntityID.Value);
 
@@ -306,6 +317,7 @@ namespace Svelto.ECS.Internal
                     var toGroupCasted = toGroup as ITypeSafeDictionary<TValue>;
                     var previousGroup = fromEntityGid.groupID;
 
+                    //todo: why is setting the EGID if this code just execute callbacks?
                     if (_hasEgid)
                         SetEGIDWithoutBoxing<TValue>.SetIDWithoutBoxing(ref entity, toEntityID.Value);
 

@@ -37,13 +37,11 @@ namespace Svelto.ECS
             _groupsPerEntity =
                 new FasterDictionary<RefWrapperType, FasterDictionary<ExclusiveGroupStruct, ITypeSafeDictionary>>();
             _groupedEntityToAdd = new DoubleBufferedEntitiesToAdd();
-            _entityReferenceMap = new FasterList<EntityReferenceMapElement>();
-            _egidToReferenceMap = new FasterDictionary<ExclusiveGroupStruct, FasterDictionary<uint, EntityReference>>();
-
             _entityStreams = EntitiesStreams.Create();
             _groupFilters =
                 new FasterDictionary<RefWrapperType, FasterDictionary<ExclusiveGroupStruct, GroupFilters>>();
-            _entitiesDB = new EntitiesDB(this);
+            _entityLocator.InitEntityReferenceMap();
+            _entitiesDB = new EntitiesDB(this,_entityLocator);
 
             scheduler        = entitiesComponentScheduler;
             scheduler.onTick = new EntitiesSubmitter(this);
@@ -131,9 +129,8 @@ namespace Svelto.ECS
 
                 _groupedEntityToAdd.Dispose();
 
-                _entityReferenceMap.Clear();
-                _egidToReferenceMap.Clear();
-
+                _entityLocator.DisposeEntityReferenceMap();
+                
                 _entityStreams.Dispose();
                 scheduler.Dispose();
             }
@@ -272,23 +269,28 @@ namespace Svelto.ECS
                         {
                             var iterations       = 0;
                             var hasEverSubmitted = false;
-
+#if UNITY_NATIVE
                             enginesRootTarget.FlushNativeOperations(profiler);
+#endif
 
                             //todo: proper unit test structural changes made as result of add/remove callbacks
                             while (enginesRootTarget.HasMadeNewStructuralChangesInThisIteration() && iterations++ < 5)
                             {
                                 hasEverSubmitted = true;
-                                _privateSubmitEntities.MoveNext();
-                                if (_privateSubmitEntities.Current == true)
-                                    yield return true;
-                                else
-                                    break;
-                            }
-                            
-                            if (enginesRootTarget.HasMadeNewStructuralChangesInThisIteration())
 
-                            enginesRootTarget.FlushNativeOperations(profiler);
+                                while (true)
+                                {
+                                    _privateSubmitEntities.MoveNext();
+                                    if (_privateSubmitEntities.Current == true)
+                                        yield return true;
+                                    else
+                                        break;
+                                }
+#if UNITY_NATIVE
+                                if (enginesRootTarget.HasMadeNewStructuralChangesInThisIteration())
+                                    enginesRootTarget.FlushNativeOperations(profiler);
+#endif
+                            }
 
 #if DEBUG && !PROFILE_SVELTO
                             if (iterations == 5)

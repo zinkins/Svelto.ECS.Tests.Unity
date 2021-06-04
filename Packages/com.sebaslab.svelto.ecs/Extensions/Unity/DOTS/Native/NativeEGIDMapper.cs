@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using Svelto.Common;
 using Svelto.DataStructures;
 
-namespace Svelto.ECS
+namespace Svelto.ECS.Native
 {
     public readonly struct NativeEGIDMapper<T>:IEGIDMapper where T : unmanaged, IEntityComponent
     {
