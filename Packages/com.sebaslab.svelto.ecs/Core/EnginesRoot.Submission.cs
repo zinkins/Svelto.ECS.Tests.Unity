@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Svelto.Common;
 using Svelto.DataStructures;
-using Svelto.ECS.Internal;
 
 namespace Svelto.ECS
 {
@@ -112,8 +109,8 @@ namespace Svelto.ECS
                                         var dbDic = GetOrCreateTypeSafeDictionary(
                                             groupID, groupDB, wrapper, targetTypeSafeDictionary);
 
-                                        //Fill the DB with the entity components generate this frame.
-                                        dbDic.AddEntitiesFromDictionary(targetTypeSafeDictionary, groupID);
+                                        //Fill the DB with the entity components generated this frame.
+                                        dbDic.AddEntitiesFromDictionary(targetTypeSafeDictionary, groupID, this);
                                     }
                                 }
                             }

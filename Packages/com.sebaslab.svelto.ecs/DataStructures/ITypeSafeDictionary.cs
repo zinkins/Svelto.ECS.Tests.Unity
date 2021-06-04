@@ -28,7 +28,7 @@ namespace Svelto.ECS.Internal
         void ExecuteEnginesRemoveCallbacks(FasterDictionary<RefWrapperType, FasterList<ReactEngineContainer>> entityComponentEnginesDB,
             in PlatformProfiler profiler, ExclusiveGroupStruct @group);
         
-        void AddEntitiesFromDictionary(ITypeSafeDictionary entitiesToSubmit, uint groupId);
+        void AddEntitiesFromDictionary(ITypeSafeDictionary entitiesToSubmit, uint groupId, EnginesRoot enginesRoot);
         
         void AddEntityToDictionary(EGID fromEntityGid, EGID toEntityID, ITypeSafeDictionary toGroup);
         void RemoveEntityFromDictionary(EGID fromEntityGid);

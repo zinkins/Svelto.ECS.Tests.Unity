@@ -1,8 +1,8 @@
 #if UNITY_ECS
-using System;
 using System.Collections;
 using Svelto.Common;
 using Svelto.DataStructures;
+using Svelto.ECS.Native;
 using Svelto.ECS.Schedulers;
 using Unity.Entities;
 using Unity.Jobs;

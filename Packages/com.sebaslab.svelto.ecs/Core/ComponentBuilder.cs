@@ -68,12 +68,13 @@ namespace Svelto.ECS
 
         static ComponentBuilder()
         {
-            ENTITY_COMPONENT_TYPE = typeof(T);
-            DEFAULT_IT = default;
+            ENTITY_COMPONENT_TYPE    = typeof(T);
+            DEFAULT_IT               = default;
             IS_ENTITY_VIEW_COMPONENT = typeof(IEntityViewComponent).IsAssignableFrom(ENTITY_COMPONENT_TYPE);
-            HAS_EGID = typeof(INeedEGID).IsAssignableFrom(ENTITY_COMPONENT_TYPE);
-            ENTITY_COMPONENT_NAME = ENTITY_COMPONENT_TYPE.ToString();
-            IS_UNMANAGED = ENTITY_COMPONENT_TYPE.IsUnmanagedEx();
+            HAS_EGID                 = typeof(INeedEGID).IsAssignableFrom(ENTITY_COMPONENT_TYPE);
+            HAS_REFERENCE            = typeof(INeedEntityReference).IsAssignableFrom(ENTITY_COMPONENT_TYPE);
+            ENTITY_COMPONENT_NAME    = ENTITY_COMPONENT_TYPE.ToString();
+            IS_UNMANAGED             = ENTITY_COMPONENT_TYPE.IsUnmanagedEx();
 
             if (IS_UNMANAGED)
                 EntityComponentIDMap.Register<T>(new Filler<T>());
@@ -101,6 +102,7 @@ namespace Svelto.ECS
         static readonly T      DEFAULT_IT;
         static readonly string ENTITY_COMPONENT_NAME;
         static          bool   IS_UNMANAGED;
+        public static   bool   HAS_REFERENCE;
 
         /// <summary>
         /// Note: this static class will hold forever the references of the entities implementors. These references

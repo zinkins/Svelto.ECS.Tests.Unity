@@ -24,21 +24,16 @@ namespace Svelto.DataStructures
         where TValueStrategy : struct, IBufferStrategy<TValue>
         where TBucketStrategy : struct, IBufferStrategy<int>
     {
-        public SveltoDictionary(uint size) : this(size, Allocator.Persistent)
-        {
-            IsStruct = TypeCache<TValue>.IsUnmanaged == true; 
-        }
-
-        public SveltoDictionary(uint size, Allocator nativeAllocator) : this()
+        public SveltoDictionary(uint size, Allocator allocator) : this()
         {
             //AllocationStrategy must be passed external for TValue because SveltoDictionary doesn't have struct
             //constraint needed for the NativeVersion
             _valuesInfo = default;
-            _valuesInfo.Alloc(size, nativeAllocator);
+            _valuesInfo.Alloc(size, allocator);
             _values = default;
-            _values.Alloc(size, nativeAllocator);
+            _values.Alloc(size, allocator);
             _buckets = default;
-            _buckets.Alloc((uint) HashHelpers.GetPrime((int) size), nativeAllocator);
+            _buckets.Alloc((uint) HashHelpers.GetPrime((int) size), allocator);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -86,15 +81,10 @@ namespace Svelto.DataStructures
             //Buckets cannot be FastCleared because it's important that the values are reset to 0
             _buckets.Clear();
 
-            if (IsStruct == false)
+            if (default(TValue) == null)
             {
                 _values.Clear();
                 _valuesInfo.Clear();
-            }
-            else
-            {
-                _values.FastClear();
-                _valuesInfo.FastClear();
             }
         }
 
@@ -108,7 +98,6 @@ namespace Svelto.DataStructures
 
             //Buckets cannot be FastCleared because it's important that the values are reset to 0
             _buckets.Clear();
-            _valuesInfo.FastClear();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -559,8 +548,6 @@ namespace Svelto.DataStructures
         uint                      _freeValueCellIndex;
         uint                      _collisions;
         internal   TValueStrategy _values;
-
-        readonly bool IsStruct;
     }
 
     public class SveltoDictionaryException : Exception
