@@ -6,6 +6,9 @@ using System.Runtime.InteropServices;
 
 namespace Svelto.ECS
 {
+    /// <summary>
+    /// Todo: EntityReference shouldn't map EGIDs as dictionaries keys but directly the indices in the EntityDB arrays
+    /// </summary>
     [Serialization.DoNotSerialize]
     [Serializable]
     [StructLayout(LayoutKind.Explicit)]
@@ -26,6 +29,8 @@ namespace Svelto.ECS
         {
             return obj1._GID != obj2._GID;
         }
+
+        public override int GetHashCode() { return _GID.GetHashCode(); }
 
         public EntityReference(uint uniqueId) : this(uniqueId, 0) {}
 
@@ -57,11 +62,19 @@ namespace Svelto.ECS
             return entitiesDB.GetEGID(this);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool ToEGID(EntitiesDB entitiesDB, out EGID egid)
+        {
+            DBC.ECS.Check.Require(this != Invalid, "Invalid Reference Used");
+
+            return entitiesDB.TryGetEGID(this, out egid);
+        }
+
         static ulong MAKE_GLOBAL_ID(uint uniqueId, uint version)
         {
             return (ulong)version << 32 | ((ulong)uniqueId & 0xFFFFFFFF);
         }
 
-        public static EntityReference Invalid => new EntityReference(0, 0);
+        public static EntityReference Invalid => default;
     }
 }

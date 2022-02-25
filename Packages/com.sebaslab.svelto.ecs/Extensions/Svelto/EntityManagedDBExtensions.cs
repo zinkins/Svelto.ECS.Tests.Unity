@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Svelto.Common;
 using Svelto.DataStructures;
 using Svelto.ECS.Hybrid;
 using Svelto.ECS.Internal;
@@ -116,28 +115,6 @@ namespace Svelto.ECS
 
             array = default;
             return false;
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static EGIDMultiMapper<T> QueryMappedEntities<T>(this EntitiesDB entitiesDb,
-                                                                LocalFasterReadOnlyList<ExclusiveGroupStruct> groups)
-            where T : struct, IEntityViewComponent
-        {
-            var dictionary = new SveltoDictionary<ExclusiveGroupStruct, SveltoDictionary<uint, T, 
-                        ManagedStrategy<SveltoDictionaryNode<uint>>, ManagedStrategy<T>, ManagedStrategy<int>>, 
-                    ManagedStrategy<SveltoDictionaryNode<ExclusiveGroupStruct>>, 
-                    ManagedStrategy<SveltoDictionary<uint, T, ManagedStrategy<SveltoDictionaryNode<uint>>, 
-                        ManagedStrategy<T>, ManagedStrategy<int>>>, ManagedStrategy<int>> 
-                ((uint) groups.count, Allocator.Managed);
-        
-            foreach (var group in groups)
-            {
-                if (entitiesDb.SafeQueryEntityDictionary<T>(group, out var typeSafeDictionary) == true)
-                    if (typeSafeDictionary.count > 0)
-                        dictionary.Add(group, ((TypeSafeDictionary<T>)typeSafeDictionary).implMgd);
-            }
-            
-            return new EGIDMultiMapper<T>(dictionary);
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

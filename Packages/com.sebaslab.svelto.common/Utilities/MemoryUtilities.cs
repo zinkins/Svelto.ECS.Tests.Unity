@@ -1,18 +1,23 @@
 #if DEBUG && !PROFILE_SVELTO
 #define DEBUG_MEMORY
 #endif
-#if UNITY_EDITOR
-#if UNITY_2019_3_OR_NEWER
-#define USE_UNITY_NATIVE
-#else
+
+#if UNITY_5_3_OR_NEWER
+#if !UNITY_2019_3_OR_NEWER
 #error Svelto.ECS 3.0 supports Unity 2019_3 and above only
+#else
+// Unity.Collections.LowLevel.Unsafe.UnsafeUtility is not part of Unity Collection but it comes with Unity
+#define UNITY_COLLECTIONS
 #endif
+#endif
+
+#if !UNITY_COLLECTIONS
+using System.Runtime.InteropServices;
 #endif
 
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Svelto.Common
 {
@@ -49,33 +54,25 @@ namespace Svelto.Common
         /// </summary>
         Invalid = Unity.Collections.Allocator.Invalid
 
-       ,
-
         /// <summary>
         ///   <para>No allocation.</para>
         /// </summary>
-        None = Unity.Collections.Allocator.None
-
-       ,
+       ,None = Unity.Collections.Allocator.None
 
         /// <summary>
         ///   <para>Temporary allocation.</para>
         /// </summary>
-        Temp = Unity.Collections.Allocator.Temp
-
-       ,
+      , Temp = Unity.Collections.Allocator.Temp
 
         /// <summary>
         ///   <para>Temporary job allocation.</para>
         /// </summary>
-        TempJob = Unity.Collections.Allocator.TempJob
-
-       ,
+      , TempJob = Unity.Collections.Allocator.TempJob
 
         /// <summary>
         ///   <para>Persistent allocation.</para>
         /// </summary>
-        Persistent = Unity.Collections.Allocator.Persistent
+      , Persistent = Unity.Collections.Allocator.Persistent
 
       , Managed
     }
@@ -87,18 +84,15 @@ namespace Svelto.Common
         {
             var signedCapacity = (int) SignedCapacity(newCapacityInBytes);
             IntPtr newPointer = IntPtr.Zero;
-#if UNITY_2019_3_OR_NEWER
-            var allocator1 = (Unity.Collections.Allocator) allocator;
+#if UNITY_COLLECTIONS
+            var castedAllocator = (Unity.Collections.Allocator) allocator;
             unsafe
             {
-                var tempPointer =
-                    Unity.Collections.LowLevel.Unsafe.UnsafeUtility.Malloc(
-                        signedCapacity, (int) OptimalAlignment.alignment, allocator1);
-
-                newPointer = (IntPtr) tempPointer;
+                newPointer = (IntPtr) Unity.Collections.LowLevel.Unsafe.UnsafeUtility.Malloc(
+                    signedCapacity, (int) OptimalAlignment.alignment, castedAllocator);
             }
 #else
-            newPointer = Marshal.AllocHGlobal(signedCapacity);
+            newPointer = Marshal.AllocHGlobal(signedCapacity); //this is guaranteed to be aligned by design
 #endif
             //Note MemClear is actually necessary
             if (clear && newCapacityInBytes > 0)
@@ -168,7 +162,7 @@ namespace Svelto.Common
         {
             ptr = CheckAndReturnPointerToFree(ptr);
 
-#if UNITY_2019_3_OR_NEWER
+#if UNITY_COLLECTIONS
             unsafe
             {
                 Unity.Collections.LowLevel.Unsafe.UnsafeUtility.Free(
@@ -180,12 +174,12 @@ namespace Svelto.Common
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void MemClear<T>(IntPtr destination, uint sizeOf) where T : struct
+        public static void MemClear<T>(IntPtr destination, uint size) where T : struct
         {
             unsafe
             {
-                var sizeOfInBytes = (uint) (SizeOf<T>() * sizeOf);
-#if UNITY_2019_3_OR_NEWER
+                var sizeOfInBytes = (uint) (SizeOf<T>() * size);
+#if UNITY_COLLECTIONS
                 Unity.Collections.LowLevel.Unsafe.UnsafeUtility.MemClear((void*) destination, sizeOfInBytes);
 #else
                 Unsafe.InitBlock((void*) destination, 0, sizeOfInBytes);
@@ -198,45 +192,67 @@ namespace Svelto.Common
         {
             unsafe
             {
-#if UNITY_2019_3_OR_NEWER
+#if UNITY_COLLECTIONS
                 Unity.Collections.LowLevel.Unsafe.UnsafeUtility.MemClear((void*) destination, sizeOfInBytes);
 #else
                 Unsafe.InitBlock((void*) destination, 0, sizeOfInBytes);
 #endif
             }
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void MemSet(IntPtr destination, uint sizeOfInBytes, byte value)
+        {
+            unsafe
+            {
+                Unsafe.InitBlock((void*) destination, value, sizeOfInBytes);
+            }
+        }
 
         /// <summary>
         /// Like Memcpy but safe when memory overlaps
         /// </summary>
-        public static void Memmove<T>(IntPtr source, uint sourceStartIndex, uint destinationStartIndex, uint size)
+        public static void MemMove<T>(IntPtr source, uint sourceStartIndex, uint destinationStartIndex, uint count)
             where T : struct
         {
             unsafe
             {
                 var sizeOf        = SizeOf<T>();
-                var sizeOfInBytes = (uint) (sizeOf * size);
-                //issues cpblk that assumes that both the source and destination addressed are aligned to the natural size of the machine.
-                Unsafe.CopyBlock((void*) (source + (int) destinationStartIndex * sizeOf)
-                               , (void*) (source + (int) sourceStartIndex * sizeOf), sizeOfInBytes);
-            }
-        }
-
-        public static void Memcpy<T>
-            (IntPtr source, uint sourceStartIndex, IntPtr destination, uint destinationStartIndex, uint size)
-            where T : struct
-        {
-            unsafe
-            {
-                var sizeOf        = SizeOf<T>();
-                var sizeOfInBytes = (uint) (sizeOf * size);
+                var sizeOfInBytes = (uint) (sizeOf * count);
+                //this uses System.Runtime.RuntimeImports::Memmove which is safe if memory overlaps
+                /*
+                 *  public static void MemoryCopy(
+                        void* source,
+                        void* destination,
+                        long destinationSizeInBytes,
+                        long sourceBytesToCopy);
+                 */
                 Buffer.MemoryCopy((void*) (source + (int) sourceStartIndex * sizeOf)
-                                , (void*) (destination + (int) destinationStartIndex * sizeOf), sizeOfInBytes
-                                , sizeOfInBytes);
+                  , (void*) (source + (int) destinationStartIndex * sizeOf), sizeOfInBytes, sizeOfInBytes);
             }
         }
 
-#if UNITY_2019_3_OR_NEWER
+        /// <summary>
+        /// this is not safe if memory overlaps
+        /// </summary>
+        public static void MemCpy<T>
+            (IntPtr source, uint sourceStartIndex, IntPtr destination, uint destinationStartIndex, uint count)
+            where T : struct
+        {
+            unsafe
+            {
+                var sizeOf        = SizeOf<T>();
+                var sizeOfInBytes = (uint) (sizeOf * count);
+                //issues cpblk that assumes that both the source and destination addressed are aligned to the natural size of the machine.
+                /*
+                 * public static unsafe void CopyBlock(void* destination, void* source, uint byteCount)
+                 * */
+                Unsafe.CopyBlock(Unsafe.Add<T>((void*)destination, ((int) destinationStartIndex)),
+                    Unsafe.Add<T>((void*)source, ((int) sourceStartIndex)), sizeOfInBytes);
+            }           
+        }
+
+#if UNITY_COLLECTIONS
         static class OptimalAlignment
         {
             internal static readonly uint alignment;
@@ -278,7 +294,7 @@ namespace Svelto.Common
 
         public static int GetFieldOffset(FieldInfo field)
         {
-#if UNITY_2019_3_OR_NEWER
+#if UNITY_COLLECTIONS
             return Unity.Collections.LowLevel.Unsafe.UnsafeUtility.GetFieldOffset(field);
 #else
             int GetFieldOffset(RuntimeFieldHandle h)
@@ -291,7 +307,12 @@ namespace Svelto.Common
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint Align4(uint input) { return (uint) (Math.Ceiling(input / 4.0) * 4); }
+        //todo unit test
+        public static uint Align4(uint input) => (uint) ((input + (4 - 1)) & ~(4 - 1));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //todo unit test
+        public static uint Pad4(uint input) => (uint) (-input & (4 - 1));
 
         static long SignedCapacity(uint newCapacity)
         {

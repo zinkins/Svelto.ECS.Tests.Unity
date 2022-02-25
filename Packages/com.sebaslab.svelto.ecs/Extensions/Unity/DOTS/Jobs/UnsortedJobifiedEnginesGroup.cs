@@ -3,31 +3,30 @@ using Svelto.Common;
 using Svelto.DataStructures;
 using Unity.Jobs;
 
-namespace Svelto.ECS.Extensions.Unity
+namespace Svelto.ECS.SveltoOnDOTS
 {
-    public interface IJobifiedGroupEngine<T> : IJobifiedEngine<T>
-    { }
     /// <summary>
     /// Note unsorted jobs run in parallel
     /// </summary>
     /// <typeparam name="Interface"></typeparam>
-    public abstract class UnsortedJobifiedEnginesGroup<Interface>:IJobifiedEngine where Interface : class, IJobifiedEngine
+    public abstract class UnsortedJobifiedEnginesGroup<Interface> : IJobifiedEngine
+        where Interface : class, IJobifiedEngine
     {
         protected UnsortedJobifiedEnginesGroup(FasterList<Interface> engines)
         {
-            _name = "JobifiedEnginesGroup - "+this.GetType().Name;
-            _engines         = engines;
+            _name    = "JobifiedEnginesGroup - " + this.GetType().Name;
+            _engines = engines;
         }
-        
+
         protected UnsortedJobifiedEnginesGroup()
         {
-            _name    = "JobifiedEnginesGroup - "+this.GetType().Name;
+            _name    = "JobifiedEnginesGroup - " + this.GetType().Name;
             _engines = new FasterList<Interface>();
         }
 
         public JobHandle Execute(JobHandle inputHandles)
         {
-            var engines = _engines;
+            var       engines         = _engines;
             JobHandle combinedHandles = inputHandles;
             using (var profiler = new PlatformProfiler(_name))
             {
@@ -36,7 +35,7 @@ namespace Svelto.ECS.Extensions.Unity
                     ref var engine = ref engines[index];
                     using (profiler.Sample(engine.name))
                     {
-                        combinedHandles = engine.Execute(inputHandles);
+                        combinedHandles = JobHandle.CombineDependencies(combinedHandles, engine.Execute(inputHandles));
                     }
                 }
             }
@@ -54,13 +53,14 @@ namespace Svelto.ECS.Extensions.Unity
         protected readonly FasterList<Interface> _engines;
         readonly           string                _name;
     }
-    
-    public abstract class JobifiedEnginesGroup<Interface, Param>: IJobifiedGroupEngine<Param> where Interface : class, IJobifiedEngine<Param>
+
+    public abstract class UnsortedJobifiedEnginesGroup<Interface, Param> : IJobifiedGroupEngine<Param>
+        where Interface : class, IJobifiedEngine<Param>
     {
-        protected JobifiedEnginesGroup(FasterList<Interface> engines)
+        protected UnsortedJobifiedEnginesGroup(FasterList<Interface> engines)
         {
-            _name = "JobifiedEnginesGroup - "+this.GetType().Name;
-            _engines         = engines;
+            _name    = "JobifiedEnginesGroup - " + this.GetType().Name;
+            _engines = engines;
         }
 
         public JobHandle Execute(JobHandle combinedHandles, ref Param _param)
@@ -71,15 +71,17 @@ namespace Svelto.ECS.Extensions.Unity
                 for (var index = 0; index < engines.count; index++)
                 {
                     var engine = engines[index];
-                    using (profiler.Sample(engine.name)) combinedHandles = engine.Execute(combinedHandles, ref _param);
+                    using (profiler.Sample(engine.name))
+                        combinedHandles = JobHandle.CombineDependencies(combinedHandles,
+                            engine.Execute(combinedHandles, ref _param));
                 }
             }
 
             return combinedHandles;
         }
-        
+
         public string name => _name;
-        
+
         readonly string _name;
 
         readonly FasterReadOnlyList<Interface> _engines;

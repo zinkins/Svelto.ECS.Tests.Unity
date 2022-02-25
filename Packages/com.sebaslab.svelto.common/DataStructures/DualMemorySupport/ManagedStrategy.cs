@@ -6,7 +6,8 @@ using Svelto.Common;
 namespace Svelto.DataStructures
 {
     /// <summary>
-    /// They are called strategy to 
+    /// They are called strategy because they abstract the handling of the memory type used.
+    /// Through the IBufferStrategy interface, external datastructure can use interchangeably native and managed memory. 
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public struct ManagedStrategy<T> : IBufferStrategy<T>
@@ -16,7 +17,7 @@ namespace Svelto.DataStructures
         public bool isValid => _buffer != null;
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Alloc(uint size)
+        void Alloc(uint size)
         {
             var b =  default(MB<T>);
             b.Set(new T[size]);
@@ -25,7 +26,7 @@ namespace Svelto.DataStructures
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void IBufferStrategy<T>.Alloc(uint size, Allocator allocator, bool clear = true)
+        public void Alloc(uint size, Allocator allocator, bool clear)
         {
             var b =  default(MB<T>);
             b.Set(new T[size]);
@@ -34,37 +35,33 @@ namespace Svelto.DataStructures
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Resize(uint newCapacity, bool copyContent = true)
+        public void Resize(uint newSize, bool copyContent = true)
         {
-            Check.Require(newCapacity >= 0, "Resize requires a size greater or equal to 0");
+            if (newSize != capacity)
+            {
+                var realBuffer = _realBuffer.ToManagedArray();
+                if (copyContent == true)
+                    Array.Resize(ref realBuffer, (int) newSize);
+                else
+                    realBuffer = new T[newSize];
 
-            var realBuffer = _realBuffer.ToManagedArray();
-            if (copyContent == true)
-                Array.Resize(ref realBuffer, (int) newCapacity);
-            else
-                realBuffer = new T[newCapacity];
-
-            var b =  default(MB<T>);
-            b.Set(realBuffer);
-            _realBuffer = b;
-            _buffer     = _realBuffer;
+                var b = default(MB<T>);
+                b.Set(realBuffer);
+                _realBuffer = b;
+                _buffer     = _realBuffer;
+            }
         }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AllocateMore(uint newSize, uint numberOfItemsToCopy, bool clear = true)
+
+        public IntPtr AsBytesPointer()
         {
-            DBC.Common.Check.Require(newSize > _buffer.capacity);
-            
-            var b =  default(MB<T>);
-            b.Set(new T[newSize]);
-
-            if (this.capacity > 0)
-                b.CopyFrom(_buffer.ToManagedArray(), numberOfItemsToCopy);
-            
-            _realBuffer = b;
-            _buffer     = _realBuffer;
+            throw new NotImplementedException();
         }
-        
+
+        public void   SerialiseFrom(IntPtr bytesPointer)
+        {
+            throw new NotImplementedException();
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ShiftLeft(uint index, uint count)
         {
@@ -128,8 +125,8 @@ namespace Svelto.DataStructures
         }
 
         public void Dispose() {}
-
-        IBuffer<T> _buffer;
-        MB<T>      _realBuffer;
+        
+        IBuffer<T>  _buffer;
+        MB<T>       _realBuffer;
     }
 }

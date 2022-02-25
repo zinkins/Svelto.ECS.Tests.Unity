@@ -1,30 +1,35 @@
+#if DEBUG && !PROFILE_SVELTO
+#define ENABLE_DEBUG_CHECKS
+#endif
+
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Svelto.Common;
+using Svelto.Common.DataStructures;
 
 namespace Svelto.DataStructures
 {
     sealed class NBDebugProxy<T> where T : struct
     {
-        NB<T> m_Array;
-
         public NBDebugProxy(NB<T> array)
         {
-            this.m_Array = array;
+            this._array = array;
         }
 
         public T[] Items
         {
             get
             {
-                T[] array = new T[m_Array.capacity];
+                T[] array = new T[_array.capacity];
                 
-                m_Array.CopyTo(0, array, 0, (uint) m_Array.capacity);
+                _array.CopyTo(0, array, 0, (uint) _array.capacity);
 
                 return array;
             }
         }
+        
+        NB<T> _array;
     }
 
     /// <summary>
@@ -46,28 +51,39 @@ namespace Svelto.DataStructures
     [DebuggerTypeProxy(typeof(NBDebugProxy<>))]
     public struct NB<T>:IBuffer<T> where T:struct
     {
+        /// <summary>
+        /// Note: static constructors are NOT compiled by burst as long as there are no static fields in the struct
+        /// </summary>
         static NB()
         {
-            if (TypeCache<T>.IsUnmanaged == false)
+#if ENABLE_DEBUG_CHECKS            
+            if (TypeType.isUnmanaged<T>() == false)
                 throw new Exception("NativeBuffer (NB) supports only unmanaged types");
+#endif            
         }
         
         public NB(IntPtr array, uint capacity) : this()
         {
-            _ptr = array;
+            _ptr      = array;
             _capacity = capacity;
         }
 
         public void CopyTo(uint sourceStartIndex, T[] destination, uint destinationStartIndex, uint count)
         {
-            for (int i = 0; i < count; i++)
+            using (_threadSentinel.TestThreadSafety())
             {
-                destination[i] = this[i];
+                for (int i = 0; i < count; i++)
+                {
+                    destination[i] = this[i];
+                }
             }
         }
         public void Clear()
         {
-            MemoryUtilities.MemClear<T>(_ptr, _capacity);
+            using (_threadSentinel.TestThreadSafety())
+            {
+                MemoryUtilities.MemClear<T>(_ptr, _capacity);
+            }
         }
 
         public T[] ToManagedArray()
@@ -96,13 +112,16 @@ namespace Svelto.DataStructures
             {
                 unsafe
                 {
-#if DEBUG && !PROFILE_SVELTO
+#if ENABLE_DEBUG_CHECKS
                     if (index >= _capacity)
                         throw new Exception($"NativeBuffer - out of bound access: index {index} - capacity {capacity}");
 #endif
-                    var size = MemoryUtilities.SizeOf<T>();
-                    ref var asRef = ref Unsafe.AsRef<T>((void*) (_ptr + (int) (index * size)));
-                    return ref asRef;
+                    using (_threadSentinel.TestThreadSafety())
+                    {
+                        var     size  = MemoryUtilities.SizeOf<T>();
+                        ref var asRef = ref Unsafe.AsRef<T>((void*)(_ptr + (int)(index * size)));
+                        return ref asRef;
+                    }
                 }
             }
         }
@@ -114,26 +133,57 @@ namespace Svelto.DataStructures
             {
                 unsafe
                 {
-#if DEBUG && !PROFILE_SVELTO
+#if ENABLE_DEBUG_CHECKS
                     if (index < 0 || index >= _capacity)
                         throw new Exception($"NativeBuffer - out of bound access: index {index} - capacity {capacity}");
 #endif
-                    var size = MemoryUtilities.SizeOf<T>();
-                    ref var asRef = ref Unsafe.AsRef<T>((void*) (_ptr + (int) (index * size)));
-                    return ref asRef;
+                    using (_threadSentinel.TestThreadSafety())
+                    {
+                        var     size  = MemoryUtilities.SizeOf<T>();
+                        ref var asRef = ref Unsafe.AsRef<T>((void*)(_ptr + (int)(index * size)));
+                        return ref asRef;
+                    }
                 }
             }
         }
-
+        
         readonly uint _capacity;
-#if UNITY_NATIVE
-        //todo can I remove this from here? it should be used outside
+
+#if UNITY_COLLECTIONS || UNITY_JOBS || UNITY_BURST    
+#if UNITY_BURST
         [Unity.Burst.NoAlias]
+#endif
         [Unity.Collections.LowLevel.Unsafe.NativeDisableUnsafePtrRestriction]
 #endif
-        readonly IntPtr _ptr; 
+        readonly IntPtr _ptr;
+        
+        readonly Sentinel _threadSentinel;
 
-        public NB<T> AsReader() { return this; }
-        public NB<T> AsWriter() { return this; }
+        //Todo: this logic is not completed yet, WIP
+        public NBParallelReader AsReader()
+        {
+            return new NBParallelReader(this, new Sentinel(this._ptr, Sentinel.readFlag));
+        }
+
+        public NBParallelWriter AsWriter()
+        {
+            return new NBParallelWriter(this, new Sentinel(this._ptr, Sentinel.writeFlag));
+        }
+
+        public struct NBParallelReader
+        {
+            public NBParallelReader(NB<T> nb, Sentinel sentinel)
+            {
+                throw new NotImplementedException();
+            }
+        }
+        
+        public struct NBParallelWriter
+        {
+            public NBParallelWriter(NB<T> nb, Sentinel sentinel)
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
 }
