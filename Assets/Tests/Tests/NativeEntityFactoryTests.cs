@@ -2,6 +2,7 @@ using NUnit.Framework;
 using Svelto.ECS;
 using Svelto.ECS.Native;
 using Svelto.ECS.Schedulers;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -31,7 +32,8 @@ public class NativeEntityFactoryTests
     {
         var creationJob = new CreateEntitiesJob
         {
-            factory = _factory.ToNative<TestDescriptor>("TestNative"),
+            factory    = _factory.ToNative<TestDescriptor>("TestNative"),
+            group      = TestGroupA,
             references = new NativeArray<EntityReference>(10000, Allocator.Persistent)
         };
 
@@ -54,7 +56,8 @@ public class NativeEntityFactoryTests
     {
         var firstCreationJob = new CreateEntitiesJob
         {
-            factory = _factory.ToNative<TestDescriptor>("TestNative"),
+            factory    = _factory.ToNative<TestDescriptor>("TestNative"),
+            group      = TestGroupA,
             references = new NativeArray<EntityReference>(1500, Allocator.Persistent)
         };
 
@@ -68,7 +71,8 @@ public class NativeEntityFactoryTests
 
         var secondCreationJob = new CreateEntitiesJob
         {
-            factory = _factory.ToNative<TestDescriptor>("TestNative"),
+            factory    = _factory.ToNative<TestDescriptor>("TestNative"),
+            group      = TestGroupB,
             references = new NativeArray<EntityReference>(5000, Allocator.Persistent)
         };
 
@@ -91,13 +95,15 @@ public class NativeEntityFactoryTests
         var firstCreationJob = new CreateEntitiesJob
         {
             factory = _factory.ToNative<TestDescriptor>("TestNative"),
+            group = TestGroupA,
             references = new NativeArray<EntityReference>(10000, Allocator.Persistent)
         };
         var firstJob = firstCreationJob.Schedule(firstCreationJob.references.Length, 1);
 
         var secondCreationJob = new CreateEntitiesJob
         {
-            factory = _factory.ToNative<TestDescriptor>("TestNative"),
+            factory    = _factory.ToNative<TestDescriptor>("TestNative"),
+            group      = TestGroupB,
             references = new NativeArray<EntityReference>(5000, Allocator.Persistent)
         };
         var secondJob = secondCreationJob.Schedule(secondCreationJob.references.Length, 1);
@@ -114,17 +120,19 @@ public class NativeEntityFactoryTests
         }
     }
 
+    [BurstCompile]
     struct CreateEntitiesJob : IJobParallelFor
     {
         public NativeEntityFactory factory;
         [DeallocateOnJobCompletion]
         public NativeArray<EntityReference> references;
 
-        [NativeSetThreadIndex] int threadIndex;
+        [NativeSetThreadIndex] int            threadIndex;
+        public                 ExclusiveGroupStruct @group;
 
         public void Execute(int index)
         {
-            var initializer = factory.BuildEntity(new EGID(0, TestGroupA), threadIndex);
+            var initializer = factory.BuildEntity(new EGID((uint)index, group), threadIndex);
             initializer.Init(new NativeSelfReferenceComponent{value = initializer.reference});
 
             references[index] = initializer.reference;
@@ -132,6 +140,7 @@ public class NativeEntityFactoryTests
     }
 
     public static readonly ExclusiveGroup TestGroupA = new ExclusiveGroup();
+    public static readonly ExclusiveGroup TestGroupB = new ExclusiveGroup();
 
     struct NativeSelfReferenceComponent : IEntityComponent
     {

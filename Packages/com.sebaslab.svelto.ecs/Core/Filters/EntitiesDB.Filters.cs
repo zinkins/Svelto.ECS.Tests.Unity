@@ -61,21 +61,20 @@ namespace Svelto.ECS
                     enginesRoot._indicesOfPersistentFiltersUsedByThisComponent;
                 _transientEntityFilters = enginesRoot._transientEntityFilters;
             }
-
+#if UNITY_BURST
             public ref EntityFilterCollection GetOrCreatePersistentFilter<T>(CombinedFilterID filterID,
                 NativeRefWrapperType typeRef) where T : unmanaged, IEntityComponent
             {
-                long combineFilterIDs                   = EnginesRoot.CombineFilterIDs<T>(filterID);
-                var  enginesRootPersistentEntityFilters = _persistentEntityFilters;
+                long                                                       combineFilterIDs                   = EnginesRoot.CombineFilterIDs<T>(filterID);
 
-                if (enginesRootPersistentEntityFilters.TryFindIndex(combineFilterIDs, out var index) == true)
-                    return ref enginesRootPersistentEntityFilters.GetDirectValueByRef(index);
+                if (_persistentEntityFilters.TryFindIndex(combineFilterIDs, out var index) == true)
+                    return ref _persistentEntityFilters.GetDirectValueByRef(index);
 
                 var filterCollection = EntityFilterCollection.Create();
 
-                enginesRootPersistentEntityFilters.Add(combineFilterIDs, filterCollection);
+                _persistentEntityFilters.Add(combineFilterIDs, filterCollection);
 
-                var lastIndex = enginesRootPersistentEntityFilters.count - 1;
+                var lastIndex = _persistentEntityFilters.count - 1;
 
                 if (_indicesOfPersistentFiltersUsedByThisComponent.TryFindIndex(typeRef, out var getIndex) == false)
                 {
@@ -89,8 +88,9 @@ namespace Svelto.ECS
                     array.Add(lastIndex);
                 }
 
-                return ref enginesRootPersistentEntityFilters.GetDirectValueByRef((uint)lastIndex);
+                return ref _persistentEntityFilters.GetDirectValueByRef((uint)lastIndex);
             }
+#endif            
 
             /// <summary>
             /// Create a persistent filter. Persistent filters are not deleted after each submission,
@@ -103,22 +103,21 @@ namespace Svelto.ECS
                 where T : unmanaged, IEntityComponent
             {
                 long combineFilterIDs                   = EnginesRoot.CombineFilterIDs<T>(filterID);
-                var  enginesRootPersistentEntityFilters = _persistentEntityFilters;
 
-                if (enginesRootPersistentEntityFilters.TryFindIndex(combineFilterIDs, out var index) == true)
-                    return ref enginesRootPersistentEntityFilters.GetDirectValueByRef(index);
+                if (_persistentEntityFilters.TryFindIndex(combineFilterIDs, out var index) == true)
+                    return ref _persistentEntityFilters.GetDirectValueByRef(index);
 
                 var typeRef          = TypeRefWrapper<T>.wrapper;
                 var filterCollection = EntityFilterCollection.Create();
 
-                enginesRootPersistentEntityFilters.Add(combineFilterIDs, filterCollection);
+                _persistentEntityFilters.Add(combineFilterIDs, filterCollection);
 
-                var lastIndex = enginesRootPersistentEntityFilters.count - 1;
+                var lastIndex = _persistentEntityFilters.count - 1;
 
                 _indicesOfPersistentFiltersUsedByThisComponent.GetOrAdd(new NativeRefWrapperType(typeRef),
                     () => new NativeDynamicArrayCast<int>(1, Allocator.Persistent)).Add(lastIndex);
 
-                return ref enginesRootPersistentEntityFilters.GetDirectValueByRef((uint)lastIndex);
+                return ref _persistentEntityFilters.GetDirectValueByRef((uint)lastIndex);
             }
 
             /// <summary>
@@ -130,17 +129,16 @@ namespace Svelto.ECS
                 where T : unmanaged, IEntityComponent
             {
                 var combineFilterIDs                  = EnginesRoot.CombineFilterIDs<T>(filterID);
-                var enginesRootTransientEntityFilters = _transientEntityFilters;
 
-                if (enginesRootTransientEntityFilters.TryFindIndex(combineFilterIDs, out var index))
-                    return ref enginesRootTransientEntityFilters.GetDirectValueByRef(index);
+                if (_transientEntityFilters.TryFindIndex(combineFilterIDs, out var index))
+                    return ref _transientEntityFilters.GetDirectValueByRef(index);
 
                 var filterCollection = EntityFilterCollection.Create();
 
-                enginesRootTransientEntityFilters.Add(combineFilterIDs, filterCollection);
+                _transientEntityFilters.Add(combineFilterIDs, filterCollection);
 
-                return ref enginesRootTransientEntityFilters.GetDirectValueByRef(
-                    (uint)(enginesRootTransientEntityFilters.count - 1));
+                return ref _transientEntityFilters.GetDirectValueByRef(
+                    (uint)(_transientEntityFilters.count - 1));
             }
         }
     }

@@ -53,6 +53,7 @@
   </PropertyGroup>
   <ItemGroup>
      <Compile Include="Assets\Tests\Tests\NativeEntityFactoryTests.cs" />
+     <Compile Include="Assets\Tests\Tests\NativeFilterTests.cs" />
      <None Include="Assets\Tests\Tests\Tests.asmdef" />
  <Reference Include="UnityEngine">
  <HintPath>C:/Program Files/Unity/Hub/Editor/2020.3.27f1/Editor/Data/Managed/UnityEngine/UnityEngine.dll</HintPath>
@@ -641,6 +642,9 @@
  </Reference>
  <Reference Include="UnityEditor.TestRunner">
  <HintPath>C:/Perforce/Svelto/Svelto.ECS.Unity.Tests/Library/ScriptAssemblies/UnityEditor.TestRunner.dll</HintPath>
+ </Reference>
+ <Reference Include="Unity.Burst">
+ <HintPath>C:/Perforce/Svelto/Svelto.ECS.Unity.Tests/Library/ScriptAssemblies/Unity.Burst.dll</HintPath>
  </Reference>
  <Reference Include="UnityEditor.UI">
  <HintPath>C:/Perforce/Svelto/Svelto.ECS.Unity.Tests/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>

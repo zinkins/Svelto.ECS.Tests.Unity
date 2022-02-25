@@ -17,7 +17,7 @@ namespace Svelto.ECS
         }
 
         public EntityFilterIterator GetEnumerator() => new EntityFilterIterator(this);
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Add<T>(EGID egid, NativeEGIDMapper<T> mmap) where T : unmanaged, IEntityComponent
         {
