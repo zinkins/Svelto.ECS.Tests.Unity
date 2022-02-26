@@ -2,7 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Svelto.Common;
 
-namespace Svelto.DataStructures
+namespace Svelto.DataStructures.Native
 {
     /// <summary>
     /// This dictionary has been created for just one reason: I needed a dictionary that would have let me iterate
@@ -58,18 +58,6 @@ namespace Svelto.DataStructures
         public bool TryGetValue(TKey key, out TValue result)
         {
             return _dictionary.TryGetValue(key, out result);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ref TValue GetDirectValueByRef(uint index)
-        {
-            return ref _dictionary.GetDirectValueByRef(index);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ref TValue GetValueByRef(TKey key)
-        {
-            return ref _dictionary.GetValueByRef(key);
         }
 
         public TValue this[TKey key]

@@ -4,16 +4,18 @@ using Svelto.Common;
 
 namespace Svelto.ECS.DataStructures
 {
-    //ToDO to complete in future version of svelto, maybe removed
+    //Necessary to be sure that the user won't pass random values
     public struct UnsafeArrayIndex
     {
         internal uint index;
-        internal uint capacity;
     }
 
     /// <summary>
     ///     Note: this must work inside burst, so it must follow burst restrictions
-    ///     Note: All the svelto native structures
+    ///     It's a typeless native queue based on a ring-buffer model. This means that the writing head and the
+    ///     reading head always advance independently. If there is enough space left by dequeued elements,
+    ///     the writing head will wrap around. The writing head cannot ever surpass the reading head.
+    ///  
     /// </summary>
     struct UnsafeBlob : IDisposable
     {
@@ -23,139 +25,131 @@ namespace Svelto.ECS.DataStructures
         internal uint capacity { get; private set; }
 
         //expressed in bytes
-        internal uint size => (uint)_writeIndex - _readIndex;
+        internal uint size
+        {
+            get
+            {
+                var currentSize = (uint) _writeIndex - _readIndex;
+#if DEBUG && !PROFILE_SVELTO
+                if ((currentSize & (4 - 1)) != 0)
+                    throw new Exception("size is expected to be a multiple of 4");
+#endif
+
+                return currentSize;
+            }
+        }
 
         //expressed in bytes
-        internal uint space => capacity - size;
+        internal uint availableSpace => capacity - size;
 
         /// <summary>
         /// </summary>
         internal Allocator allocator;
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void Write<T>(in T item) where T : struct
+        internal void Enqueue<T>(in T item) where T : struct //should be unmanaged, but it's not due to Svelto.ECS constraints.
         {
             unsafe
             {
                 var structSize = (uint) MemoryUtilities.SizeOf<T>();
+                var writeHead  = _writeIndex % capacity;
 
-                //the idea is, considering the wrap, a read pointer must always be behind a writer pointer
 #if DEBUG && !PROFILE_SVELTO
-                if (space - (int) structSize < 0)
+                var size  = _writeIndex - _readIndex;
+                var spaceAvailable = capacity - size;
+                if (spaceAvailable - (int) structSize < 0)
                     throw new Exception("no writing authorized");
-#endif
-                var writeHead = _writeIndex % capacity;
 
+                if ((writeHead & (4 - 1)) != 0)
+                    throw new Exception("write head is expected to be a multiple of 4");
+#endif
                 if (writeHead + structSize <= capacity)
                 {
                     Unsafe.Write(ptr + writeHead, item);
                 }
-                else
-                    //copy with wrap, will start to copy and wrap for the reminder
+                else //copy with wrap, will start to copy and wrap for the remainder
                 {
                     var byteCountToEnd = capacity - writeHead;
 
                     var localCopyToAvoidGcIssues = item;
                     //read and copy the first portion of Item until the end of the stream
-                    Unsafe.CopyBlock(ptr + writeHead, Unsafe.AsPointer(ref localCopyToAvoidGcIssues), (uint)byteCountToEnd);
+                    Unsafe.CopyBlock(ptr + writeHead, Unsafe.AsPointer(ref localCopyToAvoidGcIssues)
+                                   , (uint) byteCountToEnd);
 
                     var restCount = structSize - byteCountToEnd;
 
                     //read and copy the remainder
                     Unsafe.CopyBlock(ptr, (byte*) Unsafe.AsPointer(ref localCopyToAvoidGcIssues) + byteCountToEnd
-                                   , (uint)restCount);
+                                   , (uint) restCount);
                 }
 
                 //this is may seems a waste if you are going to use an unsafeBlob just for bytes, but it's necessary for mixed types.
                 //it's still possible to use WriteUnaligned though
-                int paddedStructSize = (int) MemoryUtilities.Align4(structSize);
+                uint paddedStructSize = (uint) (structSize + (int) MemoryUtilities.Pad4(structSize));
 
-                _writeIndex += paddedStructSize;
+                _writeIndex += paddedStructSize; //we want _writeIndex to be always aligned by 4
             }
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void Write<T>(in T item, uint writeIndex) where T : struct
+        //The index returned is the index of the unwrapped ring. It must be wrapped again before to be used
+        internal ref T Reserve<T>(out UnsafeArrayIndex index) where T : struct //should be unmanaged, but it's not due to Svelto.ECS constraints.
         {
             unsafe
             {
-                var  structSize = (uint) MemoryUtilities.SizeOf<T>();
+                var structSize   = (uint) MemoryUtilities.SizeOf<T>();
+                var wrappedIndex = _writeIndex % capacity;
+#if DEBUG && !PROFILE_SVELTO
+                var size           = _writeIndex - _readIndex;
+                var spaceAvailable = capacity - size;
+                if (spaceAvailable - (int) structSize < 0)
+                    throw new Exception("no writing authorized");
 
-                //the idea is, considering the wrap, a read pointer must always be behind a writer pointer
-                var writeHead = writeIndex % capacity;
+                if ((wrappedIndex & (4 - 1)) != 0)
+                    throw new Exception("write head is expected to be a multiple of 4");
+#endif
+                ref var buffer = ref Unsafe.AsRef<T>(ptr + wrappedIndex);
 
-                if (writeHead + structSize <= capacity)
-                {
-                    Unsafe.Write(ptr + writeHead, item);
-                }
-                else //copy with wrap, will start to copy and wrap for the reminder
-                {
-                    var byteCountToEnd = capacity - writeHead;
+                index.index = _writeIndex;
 
-                    var localCopyToAvoidGcIssues = item;
-                    //read and copy the first portion of Item until the end of the stream
-                    Unsafe.CopyBlock(ptr + writeHead, Unsafe.AsPointer(ref localCopyToAvoidGcIssues), byteCountToEnd);
+                _writeIndex += structSize + MemoryUtilities.Pad4(structSize);
 
-                    var restCount = structSize - byteCountToEnd;
-
-                    //read and copy the remainder
-                    Unsafe.CopyBlock(ptr, (byte*) Unsafe.AsPointer(ref localCopyToAvoidGcIssues) + byteCountToEnd
-                                   , restCount);
-                }
+                return ref buffer;
             }
         }
 
-//         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-//         //ToDo: remove this and create an UnsafeBlobUnaligned, used on NativeRingBuffer where T cannot change
-//         internal void WriteUnaligned<T>(in T item) where T : struct
-//         {
-//             unsafe
-//             {
-//                 var structSize = (uint) MemoryUtilities.SizeOf<T>();
-//
-//                 //the idea is, considering the wrap, a read pointer must always be behind a writer pointer
-// #if DEBUG && !PROFILE_SVELTO
-//                 if (space - (int) structSize < 0)
-//                     throw new Exception("no writing authorized");
-// #endif
-//                 var pointer = _writeIndex % capacity;
-//
-//                 if (pointer + structSize <= capacity)
-//                 {
-//                     Unsafe.Write(ptr + pointer, item);
-//                 }
-//                 else
-//                 {
-//                     var byteCount = capacity - pointer;
-//
-//                     var localCopyToAvoidGCIssues = item;
-//
-//                     Unsafe.CopyBlockUnaligned(ptr + pointer, Unsafe.AsPointer(ref localCopyToAvoidGCIssues), byteCount);
-//
-//                     var restCount = structSize - byteCount;
-//                     Unsafe.CopyBlockUnaligned(ptr, (byte*) Unsafe.AsPointer(ref localCopyToAvoidGCIssues) + byteCount
-//                                             , restCount);
-//                 }
-//
-//                 _writeIndex += structSize;
-//             }
-//         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal ref T AccessReserved<T>(UnsafeArrayIndex index) where T : struct //should be unmanaged, but it's not due to Svelto.ECS constraints.
+        {
+            unsafe
+            {
+                var wrappedIndex = index.index % capacity;
+#if DEBUG && !PROFILE_SVELTO
+                if ((index.index & 3) != 0)
+                    throw new Exception($"invalid index detected");
+#endif
+                return ref Unsafe.AsRef<T>(ptr + wrappedIndex);
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal T Read<T>() where T : struct
+        internal T Dequeue<T>()  where T : struct //should be unmanaged, but it's not due to Svelto.ECS constraints.
         {
             unsafe
             {
                 var structSize = (uint) MemoryUtilities.SizeOf<T>();
+                var readHead   = _readIndex % capacity;
 
 #if DEBUG && !PROFILE_SVELTO
+                var size = _writeIndex - _readIndex;
                 if (size < structSize) //are there enough bytes to read?
                     throw new Exception("dequeuing empty queue or unexpected type dequeued");
                 if (_readIndex > _writeIndex)
                     throw new Exception("unexpected read");
+                if ((readHead & (4 - 1)) != 0)
+                    throw new Exception("read head is expected to be a multiple of 4");
 #endif
-                var head             = _readIndex % capacity;
-                var paddedStructSize = MemoryUtilities.Align4(structSize);
+                var paddedStructSize = structSize + MemoryUtilities.Pad4(structSize);
                 _readIndex += paddedStructSize;
 
                 if (_readIndex == _writeIndex)
@@ -167,12 +161,14 @@ namespace Svelto.ECS.DataStructures
                     _readIndex  = 0;
                 }
 
-                if (head + paddedStructSize <= capacity)
-                    return Unsafe.Read<T>(ptr + head);
+                if (readHead + paddedStructSize <= capacity)
+                    return Unsafe.Read<T>(ptr + readHead);
 
+                //handle the case the structure wraps around so it must be reconstructed from the part at the 
+                //end of the stream and the part starting from the begin.
                 T   item           = default;
-                var byteCountToEnd = capacity - head;
-                Unsafe.CopyBlock(Unsafe.AsPointer(ref item), ptr + head, byteCountToEnd);
+                var byteCountToEnd = capacity - readHead;
+                Unsafe.CopyBlock(Unsafe.AsPointer(ref item), ptr + readHead, byteCountToEnd);
 
                 var restCount = structSize - byteCountToEnd;
                 Unsafe.CopyBlock((byte*) Unsafe.AsPointer(ref item) + byteCountToEnd, ptr, restCount);
@@ -180,87 +176,61 @@ namespace Svelto.ECS.DataStructures
                 return item;
             }
         }
-
+        
+        /// <summary>
+        /// This code unwraps the queue and resizes the array, but doesn't change the unwrapped index of existing elements.
+        /// In this way the previously reserved indices will remain valid
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal ref T Reserve<T>(out UnsafeArrayIndex index) where T : struct
+        internal void Grow<T>() where T : struct //should be unmanaged, but it's not due to Svelto.ECS constraints.
         {
             unsafe
             {
-                var sizeOf = (uint) MemoryUtilities.SizeOf<T>();
+                var sizeOf      = MemoryUtilities.SizeOf<T>();
 
-                ref var buffer = ref Unsafe.AsRef<T>(ptr + _writeIndex);
-
-#if DEBUG && !PROFILE_SVELTO
-                if (_writeIndex > capacity)
-                    throw new Exception(
-                        $"can't reserve if the writeIndex wrapped around the capacity, writeIndex {_writeIndex} capacity {capacity}");
-                if (_writeIndex + sizeOf > capacity)
-                    throw new Exception("out of bound reserving");
-#endif
-                index = new UnsafeArrayIndex
-                {
-                    capacity = capacity
-                  , index    = (uint)_writeIndex
-                };
-
-                int align4 = (int) MemoryUtilities.Align4(sizeOf);
-                _writeIndex += align4;
-
-                return ref buffer;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal ref T AccessReserved<T>(UnsafeArrayIndex index) where T : struct
-        {
-            unsafe
-            {
-#if DEBUG && !PROFILE_SVELTO
-                var size = MemoryUtilities.SizeOf<T>();
-                if (index.index + size > capacity)
-                    throw new Exception($"out of bound access, index {index.index} size {size} capacity {capacity}");
-#endif
-                return ref Unsafe.AsRef<T>(ptr + index.index);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void Realloc(uint newCapacity)
-        {
-            unsafe
-            {
+                var oldCapacity = capacity;
+                
+                uint newCapacity = (uint) ((oldCapacity + sizeOf) << 1);
                 //be sure it's multiple of 4. Assuming that what we write is aligned to 4, then we will always have aligned wrapped heads
-                newCapacity = MemoryUtilities.Align4(newCapacity);
+                //the reading and writing head always increment in multiple of 4
+                newCapacity += MemoryUtilities.Pad4(newCapacity);
 
                 byte* newPointer = null;
-#if DEBUG && !PROFILE_SVELTO
-                if (newCapacity <= capacity)
-                    throw new Exception("new capacity must be bigger than current");
-#endif
-                if (newCapacity > 0)
+                newPointer = (byte*) MemoryUtilities.Alloc(newCapacity, allocator);
+
+                //copy wrapped content if there is any
+                var currentSize = _writeIndex - _readIndex;
+                if (currentSize > 0)
                 {
-                    newPointer = (byte*) MemoryUtilities.Alloc(newCapacity, allocator);
-                    if (size > 0)
+                    var oldReaderHead = _readIndex % oldCapacity;
+                    var oldWriterHead    = _writeIndex % oldCapacity;
+
+                    //Remembering that the unwrapped reader cannot ever surpass the unwrapped writer, if the reader is behind the writer
+                    //it means that the writer didn't wrap. It's the natural position so the data can be copied with
+                    //a single memcpy
+                    if (oldReaderHead < oldWriterHead)
                     {
-                        var readerHead = _readIndex % capacity;
-                        var writerHead = _writeIndex % capacity;
-
-                        if (readerHead < writerHead)
-                        {
-                            //copy to the new pointer, from th reader position
-                            var currentSize = _writeIndex - _readIndex;
-                            Unsafe.CopyBlock(newPointer, ptr + readerHead, (uint)currentSize);
-                        }
-                        //the assumption is that if size > 0 (so readerPointer and writerPointer are not the same)
-                        //writerHead wrapped and reached readerHead. so I have to copy from readerHead to the end
-                        //and from the start to writerHead (which is the same position of readerHead)
-                        else
-                        {
-                            var byteCountToEnd = capacity - readerHead;
-
-                            Unsafe.CopyBlock(newPointer, ptr + readerHead, byteCountToEnd);
-                            Unsafe.CopyBlock(newPointer + byteCountToEnd, ptr, (uint)writerHead);
-                        }
+                        var newReaderHead = _readIndex % newCapacity;
+                        
+                        Unsafe.CopyBlock(newPointer + newReaderHead, ptr + oldReaderHead, (uint) currentSize);
+                    }
+                    else
+                    {
+                        //if the wrapped writer is behind the wrapped reader, it means the writer wrapped. Therefore
+                        //I need to copy the data from the current wrapped reader to the end and then from the 
+                        //begin of the array to the current wrapped writer.
+                        
+                        var byteCountToEnd = oldCapacity - oldReaderHead; //bytes to copy from the reader to the end
+                        var newReaderHead  = _readIndex % newCapacity;
+                        
+#if DEBUG && !PROFILE_SVELTO
+                        if (newReaderHead + byteCountToEnd + oldWriterHead > newCapacity) //basically the test is the old size must be less than the new capacity. 
+                            throw new Exception("something is wrong with my previous assumptions");
+#endif                  
+                        //I am leaving on purpose gap at the begin of the new array if there is any, it will be 
+                        //anyway used once it's time to wrap. 
+                        Unsafe.CopyBlock(newPointer + newReaderHead, ptr + oldReaderHead, byteCountToEnd); //from the old reader head to the end of the old array
+                        Unsafe.CopyBlock(newPointer + newReaderHead + byteCountToEnd, ptr + 0, (uint) oldWriterHead); //from the begin of the old array to the old writer head (rember the writerHead wrapped)
                     }
                 }
 
@@ -269,9 +239,9 @@ namespace Svelto.ECS.DataStructures
 
                 ptr      = newPointer;
                 capacity = newCapacity;
-                
-                _readIndex  = 0;
-                _writeIndex = (int)size;
+
+                //_readIndex  = 0; the idea is that the old readIndex should remain unchanged. Remember this is the unwrapped index.
+                _writeIndex = _readIndex + currentSize;
             }
         }
 
@@ -296,7 +266,7 @@ namespace Svelto.ECS.DataStructures
             _readIndex  = 0;
         }
 
-        internal int  _writeIndex;
-        internal uint _readIndex;
+        uint _writeIndex;
+        uint _readIndex;
     }
 }

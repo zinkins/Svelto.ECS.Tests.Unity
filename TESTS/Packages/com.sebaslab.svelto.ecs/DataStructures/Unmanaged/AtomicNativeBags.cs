@@ -34,7 +34,7 @@ namespace Svelto.ECS.DataStructures
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ref NativeBag GetBuffer(int index)
+        public readonly ref NativeBag GetBuffer(int index)
         {
 #if DEBUG            
             if (_data == null)
@@ -75,7 +75,7 @@ namespace Svelto.ECS.DataStructures
         readonly Allocator _allocator;
         readonly uint      _threadsCount;
         
-#if UNITY_COLLECTIONS || UNITY_JOBS || UNITY_BURST    
+#if UNITY_COLLECTIONS || UNITY_JOBS || UNITY_BURST
 #if UNITY_BURST
         [Unity.Burst.NoAlias]
 #endif

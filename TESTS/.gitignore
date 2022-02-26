@@ -1,0 +1,9 @@
+.idea/
+Library/
+Temp/
+obj/
+*.log
+Packages/packages-lock.json
+InitTestScene*.*
+IL2CPP/
+IL2CPPTESTS/New Unity Project_BackUpThisFolder_ButDontShipItWithYourGame/

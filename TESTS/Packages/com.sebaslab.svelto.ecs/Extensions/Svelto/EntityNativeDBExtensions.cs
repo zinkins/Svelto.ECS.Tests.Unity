@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Svelto.Common;
 using Svelto.DataStructures;
 using Svelto.ECS.Internal;
 
@@ -51,7 +50,6 @@ namespace Svelto.ECS
 
             return false;
         }
-        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryGetEntity<T>(this EntitiesDB entitiesDb, uint entityID, ExclusiveGroupStruct @group, out T value)
             where T : unmanaged, IEntityComponent
@@ -65,14 +63,13 @@ namespace Svelto.ECS
             value = default;
             return false;
         }
-        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryGetEntity<T>(this EntitiesDB entitiesDb, EGID egid, out T value)
             where T : unmanaged, IEntityComponent
         {
             return TryGetEntity<T>(entitiesDb, egid.entityID, egid.groupID, out value);
         }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static bool QueryEntitiesAndIndexInternal<T>
             (this EntitiesDB entitiesDb, EGID entityGID, out uint index, out NB<T> buffer)

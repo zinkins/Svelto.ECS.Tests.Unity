@@ -43,7 +43,7 @@ namespace Svelto.ECS
 
             internal void Copy(ISerializationData serializationData)
             {
-                serializationData.data.ExpandBy(SIZE);
+                serializationData.data.IncrementCountBy(SIZE);
 
                 // Splitting the descriptorHash_ (uint, 32 bit) into four bytes.
                 serializationData.data[serializationData.dataPos++] = (byte) (descriptorHash & 0xff);
@@ -59,7 +59,7 @@ namespace Svelto.ECS
                 serializationData.data[serializationData.dataPos++] = (byte) ((entityID >> 24) & 0xff);
 
                 // Splitting the groupID (uint, 32 bit) into four bytes.
-                uint groupID = (uint) egid.groupID;
+                var groupID = egid.groupID.ToIDAndBitmask();
                 serializationData.data[serializationData.dataPos++] = (byte) (groupID & 0xff);
                 serializationData.data[serializationData.dataPos++] = (byte) ((groupID >> 8) & 0xff);
                 serializationData.data[serializationData.dataPos++] = (byte) ((groupID >> 16) & 0xff);
