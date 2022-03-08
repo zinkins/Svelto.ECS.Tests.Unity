@@ -34,17 +34,17 @@ public class TestsForBurstTeam
     {
         _enginesRoot.Dispose();
     }
-    
+
     [Test]
     public void TestUnsafeUtilityFreeIsNotRecognisedByBurst()
     {
         new TestFreeJob
         {
         }.Run();
-        
+
         Assert.Pass();
     }
-#if ENABLE_COMPILING_ERROR    
+#if ENABLE_COMPILING_ERROR
     [Test]
     public void TestBurstFailsCompileCode()
     {
@@ -62,9 +62,7 @@ public class TestsForBurstTeam
     {
         new CreateEntitiesJob
         {
-            factory = _factory.ToNative<TestDescriptor>("TestNative")
-          , group   = TestGroupA
-           ,
+            factory = _factory.ToNative<TestDescriptor>("TestNative"), group = TestGroupA,
         }.Run();
 
         _scheduler.SubmitEntities();
@@ -72,17 +70,15 @@ public class TestsForBurstTeam
 
         new CreateFilterAndAddEntitiesInFilters
         {
-            filters = filters
-          , group  = TestGroupA
-          , typeRef = new NativeRefWrapperType(new RefWrapperType(typeof(NativeSelfReferenceComponent)))
+            filters = filters, group = TestGroupA,
+            typeRef = new NativeRefWrapperType(new RefWrapperType(typeof(NativeSelfReferenceComponent)))
         }.Run();
 
-        EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>(
-            new EntitiesDB.SveltoFilters.CombinedFilterID(0, filterContextId));
+        EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>((0, filterContextId));
 
         Assert.That(filter.GetGroupFilter(TestGroupA).count, Is.EqualTo(10));
     }
-    
+
     [Test]
     //This test will succeed, this means that allocating native memory outside the job and then fetching
     //it inside the job will work.1
@@ -90,24 +86,19 @@ public class TestsForBurstTeam
     {
         new CreateEntitiesJob
         {
-            factory = _factory.ToNative<TestDescriptor>("TestNative")
-          , group   = TestGroupA
-           ,
+            factory = _factory.ToNative<TestDescriptor>("TestNative"), group = TestGroupA,
         }.Run();
 
         _scheduler.SubmitEntities();
         var filters = _engine.entitiesDB.GetFilters();
-        filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(
-            new EntitiesDB.SveltoFilters.CombinedFilterID(0, filterContextId));
+        filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>((0, filterContextId));
 
         new AddEntitiesInFilters
         {
-            filters = filters
-          , group   = TestGroupA
+            filters = filters, group = TestGroupA
         }.Run();
 
-        EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>(
-            new EntitiesDB.SveltoFilters.CombinedFilterID(0, filterContextId));
+        EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>((0, filterContextId));
 
         Assert.That(filter.GetGroupFilter(TestGroupA).count, Is.EqualTo(10));
     }
@@ -140,33 +131,33 @@ public class TestsForBurstTeam
         public void Execute()
         {
             var dictionary = new SveltoDictionaryNative<uint, uint>(1);
-            dictionary.Add(1,2);
+            dictionary.Add(1, 2);
             if (dictionary[1] != 2) throw new Exception("Test failed");
             dictionary.Dispose();
         }
     }
-    
+
     //This code will generate this error (you can check it in the inspector):
-//todo:warningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarning
+    //todo:warningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarning
     //please be sure to disable it in order to run the other tests
-//todo:warningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarning
-//     Unexpected exception System.Exception: Error while hashing 0x60002D1 in Svelto.ECS, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null ---> System.NotSupportedException: Specified method is not supported.
-//   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitILType (Burst.Compiler.IL.Hashing.Types.ILType ilType) [0x00193] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitTypeSpecification (Burst.Compiler.IL.Hashing.CacheRuntime.Metadata.CachedTypeSpecification& cachedTypeSpecification, Burst.Compiler.IL.Hashing.ILGenericContext genericContext) [0x00008] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.HashMethodDefinition (Burst.Compiler.IL.Hashing.CacheRuntime.ToVisit& itemToVisit) [0x001cb] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitItem (Burst.Compiler.IL.Hashing.CacheRuntime.ToVisit& itemToVisit) [0x000c7] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//    --- End of inner exception stack trace ---
-//   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitItem (Burst.Compiler.IL.Hashing.CacheRuntime.ToVisit& itemToVisit) [0x000ff] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.GetHashImpl () [0x00126] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.GetHash (Mono.Cecil.MethodReference[] methodReferences, Burst.Compiler.IL.Hashing.CacheRuntime.HashCacheAssemblyStore assemblyStore, zzzUnity.Burst.CodeGen.AssemblyLoader assemblyLoader, Burst.Compiler.IL.NativeCompilerOptions options, System.Action`2[T1,T2] onVisitItem) [0x0000c] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//   at Burst.Compiler.IL.NativeCompiler.ComputeHash () [0x0004e] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//   at Burst.Compiler.IL.Jit.JitCompiler.CompileMethodInternal (Burst.Compiler.IL.Jit.JitResult result, System.Collections.Generic.List`1[T] methodsToCompile, Burst.Compiler.IL.Jit.JitOptions jitOptions) [0x0017f] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//   at Burst.Compiler.IL.Jit.JitCompiler.CompileMethods (Burst.Compiler.IL.Jit.JitMethodGroupRequest& request, Burst.Compiler.IL.Jit.JitCompilationRequestType requestType) [0x00209] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//   at Burst.Compiler.IL.Jit.JitCompiler.CompileMethod (Burst.Compiler.IL.Jit.MethodReferenceWithMethodRefString method, Burst.Compiler.IL.Jit.JitOptions jitOptions, Burst.Compiler.IL.Jit.JitCompilationRequestType requestType) [0x00023] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//   at Burst.Compiler.IL.Jit.JitCompilerService+CompilerThreadContext.Compile (Burst.Compiler.IL.Jit.JitCompilerService+CompileJob job, Burst.Compiler.IL.Jit.JitCompilationRequestType requestType) [0x00491] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-//
-// While compiling job: System.Void Unity.Jobs.IJobForExtensions/ForJobStruct`1<TestsForBurstTeam/ThisCodeWontCompile>::Execute(T&,System.IntPtr,System.IntPtr,Unity.Jobs.LowLevel.Unsafe.JobRanges&,System.Int32)
-// at <empty>:line 0
+    //todo:warningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarning
+    //     Unexpected exception System.Exception: Error while hashing 0x60002D1 in Svelto.ECS, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null ---> System.NotSupportedException: Specified method is not supported.
+    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitILType (Burst.Compiler.IL.Hashing.Types.ILType ilType) [0x00193] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitTypeSpecification (Burst.Compiler.IL.Hashing.CacheRuntime.Metadata.CachedTypeSpecification& cachedTypeSpecification, Burst.Compiler.IL.Hashing.ILGenericContext genericContext) [0x00008] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.HashMethodDefinition (Burst.Compiler.IL.Hashing.CacheRuntime.ToVisit& itemToVisit) [0x001cb] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitItem (Burst.Compiler.IL.Hashing.CacheRuntime.ToVisit& itemToVisit) [0x000c7] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //    --- End of inner exception stack trace ---
+    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitItem (Burst.Compiler.IL.Hashing.CacheRuntime.ToVisit& itemToVisit) [0x000ff] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.GetHashImpl () [0x00126] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.GetHash (Mono.Cecil.MethodReference[] methodReferences, Burst.Compiler.IL.Hashing.CacheRuntime.HashCacheAssemblyStore assemblyStore, zzzUnity.Burst.CodeGen.AssemblyLoader assemblyLoader, Burst.Compiler.IL.NativeCompilerOptions options, System.Action`2[T1,T2] onVisitItem) [0x0000c] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //   at Burst.Compiler.IL.NativeCompiler.ComputeHash () [0x0004e] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //   at Burst.Compiler.IL.Jit.JitCompiler.CompileMethodInternal (Burst.Compiler.IL.Jit.JitResult result, System.Collections.Generic.List`1[T] methodsToCompile, Burst.Compiler.IL.Jit.JitOptions jitOptions) [0x0017f] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //   at Burst.Compiler.IL.Jit.JitCompiler.CompileMethods (Burst.Compiler.IL.Jit.JitMethodGroupRequest& request, Burst.Compiler.IL.Jit.JitCompilationRequestType requestType) [0x00209] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //   at Burst.Compiler.IL.Jit.JitCompiler.CompileMethod (Burst.Compiler.IL.Jit.MethodReferenceWithMethodRefString method, Burst.Compiler.IL.Jit.JitOptions jitOptions, Burst.Compiler.IL.Jit.JitCompilationRequestType requestType) [0x00023] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //   at Burst.Compiler.IL.Jit.JitCompilerService+CompilerThreadContext.Compile (Burst.Compiler.IL.Jit.JitCompilerService+CompileJob job, Burst.Compiler.IL.Jit.JitCompilationRequestType requestType) [0x00491] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
+    //
+    // While compiling job: System.Void Unity.Jobs.IJobForExtensions/ForJobStruct`1<TestsForBurstTeam/ThisCodeWontCompile>::Execute(T&,System.IntPtr,System.IntPtr,Unity.Jobs.LowLevel.Unsafe.JobRanges&,System.Int32)
+    // at <empty>:line 0
 #if ENABLE_COMPILING_ERROR
     [BurstCompile]
     struct ThisCodeWontCompile : IJob
@@ -193,17 +184,17 @@ public class TestsForBurstTeam
         public ExclusiveGroupStruct     @group;
         public EntitiesDB.SveltoFilters filters;
         public NativeRefWrapperType     typeRef;
- 
+
         public void Execute()
         {
-            var filter = filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(
-                new EntitiesDB.SveltoFilters.CombinedFilterID(0, filterContextId), typeRef);
-            
+            var filter =
+                filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>((0, filterContextId), typeRef);
+
             for (int index = 0; index < 10; index++)
                 filter.Add(new EGID((uint)index, group), (uint)index);
         }
     }
-    
+
     [BurstCompile]
     //This job assumes that the filter has been previously allocated. Populating it works as expected.
     struct AddEntitiesInFilters : IJob
@@ -213,9 +204,8 @@ public class TestsForBurstTeam
 
         public void Execute()
         {
-            var filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>(
-                new EntitiesDB.SveltoFilters.CombinedFilterID(0, filterContextId));
-            
+            var filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>((0, filterContextId));
+
             for (int index = 0; index < 10; index++)
                 filter.Add(new EGID((uint)index, group), (uint)index);
         }
@@ -235,11 +225,15 @@ public class TestsForBurstTeam
         public EntityReference value;
     }
 
-    class TestDescriptor : GenericEntityDescriptor<EGIDComponent, NativeSelfReferenceComponent> { }
+    class TestDescriptor : GenericEntityDescriptor<EGIDComponent, NativeSelfReferenceComponent>
+    {
+    }
 
     class TestEngine : IQueryingEntitiesEngine
     {
-        public void Ready() { }
+        public void Ready()
+        {
+        }
 
         public EntitiesDB entitiesDB { get; set; }
     }

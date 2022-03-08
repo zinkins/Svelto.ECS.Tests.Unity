@@ -27,6 +27,11 @@ namespace Svelto.ECS
                 {
                     id = (long)filterID << 32 | (uint)contextID.id << 16;
                 }
+
+                public static implicit operator CombinedFilterID((int filterID, ContextID contextID) data)
+                {
+                    return new CombinedFilterID(data.filterID, data.contextID);
+                }
             }
 
             public struct ContextID
