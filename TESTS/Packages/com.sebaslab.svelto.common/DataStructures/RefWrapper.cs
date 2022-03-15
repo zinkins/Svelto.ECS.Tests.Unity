@@ -36,7 +36,7 @@ namespace Svelto.DataStructures
     
     public readonly struct NativeRefWrapperType: IEquatable<NativeRefWrapperType>
     {
-        internal static FasterDictionary<RefWrapperType, System.Guid> GUIDCache =
+        static readonly FasterDictionary<RefWrapperType, System.Guid> GUIDCache =
             new FasterDictionary<RefWrapperType, Guid>();
         
         public NativeRefWrapperType(RefWrapperType type)

@@ -159,7 +159,6 @@ namespace Svelto.DataStructures.Native
 #if UNITY_BURST 
         [Unity.Burst.BurstDiscard]
 #endif        
-
         void ReleaseCachedReference()
         {
             if ((IntPtr)_cachedReference != IntPtr.Zero)

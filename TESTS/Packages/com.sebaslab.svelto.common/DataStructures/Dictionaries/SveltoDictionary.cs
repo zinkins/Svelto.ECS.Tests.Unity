@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Svelto.Common;
@@ -19,6 +18,8 @@ namespace Svelto.DataStructures
         {
             _dic = dic;
         }
+        
+        public uint count => (uint)_dic.count;
 
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
         public KeyValuePairFast<TKey, TValue, TValueStrategy>[] keyValues

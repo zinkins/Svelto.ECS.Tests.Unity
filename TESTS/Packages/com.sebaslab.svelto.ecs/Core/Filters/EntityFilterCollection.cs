@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using Svelto.Common;
-using Svelto.Common.DataStructures;
 using Svelto.DataStructures.Native;
 using Svelto.ECS.Native;
 
@@ -174,8 +173,6 @@ namespace Svelto.ECS
             SharedSveltoDictionaryNative<uint, uint>          _indexToEntityId;
             internal SharedSveltoDictionaryNative<uint, uint> _entityIDToDenseIndex;
             readonly ExclusiveGroupStruct                     _group;
-            
-            readonly Sentinel _threadSentinel;
         }
     }
 }

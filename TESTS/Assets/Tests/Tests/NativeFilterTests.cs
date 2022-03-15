@@ -70,11 +70,12 @@ public class TestsForBurstTeam
 
         new CreateFilterAndAddEntitiesInFilters
         {
-            filters = filters, group = TestGroupA,
-            typeRef = new NativeRefWrapperType(new RefWrapperType(typeof(NativeSelfReferenceComponent)))
+            filters         = filters, group = TestGroupA,
+            typeRef         = new NativeRefWrapperType(new RefWrapperType(typeof(NativeSelfReferenceComponent))),
+            filterContextId = _filterContextId
         }.Run();
 
-        EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>((0, filterContextId));
+        EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>(0, _filterContextId);
 
         Assert.That(filter.GetGroupFilter(TestGroupA).count, Is.EqualTo(10));
     }
@@ -91,14 +92,14 @@ public class TestsForBurstTeam
 
         _scheduler.SubmitEntities();
         var filters = _engine.entitiesDB.GetFilters();
-        filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>((0, filterContextId));
+        filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(0, _filterContextId);
 
         new AddEntitiesInFilters
         {
-            filters = filters, group = TestGroupA
+            filters = filters, group = TestGroupA, filterContextId = _filterContextId
         }.Run();
 
-        EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>((0, filterContextId));
+        EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>(0, _filterContextId);
 
         Assert.That(filter.GetGroupFilter(TestGroupA).count, Is.EqualTo(10));
     }
@@ -184,11 +185,11 @@ public class TestsForBurstTeam
         public ExclusiveGroupStruct     @group;
         public EntitiesDB.SveltoFilters filters;
         public NativeRefWrapperType     typeRef;
+        public FilterContextID          filterContextId;
 
         public void Execute()
         {
-            var filter =
-                filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>((0, filterContextId), typeRef);
+            var filter = filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(0, filterContextId, typeRef);
 
             for (int index = 0; index < 10; index++)
                 filter.Add(new EGID((uint)index, group), (uint)index);
@@ -201,23 +202,25 @@ public class TestsForBurstTeam
     {
         public ExclusiveGroupStruct     @group;
         public EntitiesDB.SveltoFilters filters;
+        public FilterContextID          filterContextId;
 
         public void Execute()
         {
-            var filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>((0, filterContextId));
+            var combinedFilterID = new CombinedFilterID(0, filterContextId);
+            var filter           = filters.GetPersistentFilter<NativeSelfReferenceComponent>(combinedFilterID);
 
             for (int index = 0; index < 10; index++)
                 filter.Add(new EGID((uint)index, group), (uint)index);
         }
     }
 
-    static readonly ExclusiveGroupStruct               TestGroupA;
-    static readonly EntitiesDB.SveltoFilters.ContextID filterContextId;
+    static readonly ExclusiveGroupStruct TestGroupA;
+    static readonly FilterContextID      _filterContextId;
 
     static TestsForBurstTeam()
     {
-        TestGroupA      = new ExclusiveGroup();
-        filterContextId = EntitiesDB.SveltoFilters.GetNewContextID();
+        TestGroupA       = new ExclusiveGroup();
+        _filterContextId = EntitiesDB.SveltoFilters.GetNewContextID();
     }
 
     struct NativeSelfReferenceComponent : IEntityComponent

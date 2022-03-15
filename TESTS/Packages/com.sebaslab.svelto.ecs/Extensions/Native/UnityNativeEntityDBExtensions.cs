@@ -8,7 +8,7 @@ namespace Svelto.ECS.Native
 {
     public static class UnityNativeEntityDBExtensions
     {
-        internal static NativeEGIDMapper<T> ToNativeEGIDMapper<T>(this TypeSafeDictionary<T> dic,
+        static NativeEGIDMapper<T> ToNativeEGIDMapper<T>(this TypeSafeDictionary<T> dic,
             ExclusiveGroupStruct groupStructId) where T : unmanaged, IEntityComponent
         {
             var mapper = new NativeEGIDMapper<T>(groupStructId, dic.implUnmgd);

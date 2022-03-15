@@ -4,14 +4,56 @@ using Svelto.Common;
 using Svelto.DataStructures;
 using Svelto.DataStructures.Native;
 using Svelto.ECS.DataStructures;
+using Unity.Burst;
 
 namespace Svelto.ECS
 {
+    public struct FilterContextID
+    {
+        public readonly uint id;
+
+        internal FilterContextID(uint id)
+        {
+            DBC.ECS.Check.Require(id < ushort.MaxValue, "too many types registered, HOW :)");
+
+            this.id = id;
+        }
+    }
+    
+    public struct CombinedFilterID
+    {
+        public readonly long id;
+
+        public CombinedFilterID(int filterID, FilterContextID contextID)
+        {
+            id = (long)filterID << 32 | (uint)contextID.id << 16;
+        }
+    }
+    
+    public class FilterHelper
+    {
+        class TypeCounter<T>
+        {
+            internal static readonly SharedStatic<int, TypeCounter<T>> id = new SharedStatic<int, TypeCounter<T>>();
+
+            static TypeCounter()
+            {
+                Interlocked.Increment(ref id.Data);
+
+                DBC.ECS.Check.Ensure(id.Data < ushort.MaxValue, "too many types registered, HOW :)");
+            }
+        }
+
+        internal static long CombineFilterIDs<T>(CombinedFilterID combinedFilterID) =>
+            (long)combinedFilterID.id | (uint)TypeCounter<T>.id.Data;
+    }
+
     public partial class EntitiesDB
     {
         public SveltoFilters GetFilters()
         {
-            return new SveltoFilters(_enginesRoot);
+            return new SveltoFilters(_enginesRoot._persistentEntityFilters,
+                _enginesRoot._indicesOfPersistentFiltersUsedByThisComponent, _enginesRoot._transientEntityFilters);
         }
 
         /// <summary>
@@ -19,59 +61,33 @@ namespace Svelto.ECS
         /// </summary>
         public readonly struct SveltoFilters
         {
-            public struct CombinedFilterID
+            public static FilterContextID GetNewContextID()
             {
-                public readonly long id;
-
-                public CombinedFilterID(int filterID, ContextID contextID)
-                {
-                    id = (long)filterID << 32 | (uint)contextID.id << 16;
-                }
-
-                public static implicit operator CombinedFilterID((int filterID, ContextID contextID) data)
-                {
-                    return new CombinedFilterID(data.filterID, data.contextID);
-                }
+                return new FilterContextID((uint)Interlocked.Increment(ref uniqueContextID.Data));
             }
 
-            public struct ContextID
+            public SveltoFilters(SharedSveltoDictionaryNative<long, EntityFilterCollection> persistentEntityFilters,
+                SharedSveltoDictionaryNative<NativeRefWrapperType, NativeDynamicArrayCast<int>>
+                    indicesOfPersistentFiltersUsedByThisComponent,
+                SharedSveltoDictionaryNative<long, EntityFilterCollection> transientEntityFilters)
             {
-                public readonly uint id;
-
-                internal ContextID(uint id)
-                {
-                    DBC.ECS.Check.Require(id < ushort.MaxValue, "too many types registered, HOW :)");
-
-                    this.id = id;
-                }
+                _persistentEntityFilters                       = persistentEntityFilters;
+                _indicesOfPersistentFiltersUsedByThisComponent = indicesOfPersistentFiltersUsedByThisComponent;
+                _transientEntityFilters                        = transientEntityFilters;
             }
 
-            public static ContextID GetNewContextID()
-            {
-                return new ContextID((uint)Interlocked.Increment(ref uniqueContextID.Data));
-            }
-
-            static readonly SharedStatic<int, SveltoFilters> uniqueContextID = new SharedStatic<int, SveltoFilters>(1);
-
-            readonly SharedSveltoDictionaryNative<long, EntityFilterCollection> _persistentEntityFilters;
-
-            readonly SharedSveltoDictionaryNative<NativeRefWrapperType, NativeDynamicArrayCast<int>>
-                _indicesOfPersistentFiltersUsedByThisComponent;
-
-            readonly SharedSveltoDictionaryNative<long, EntityFilterCollection> _transientEntityFilters;
-
-            public SveltoFilters(EnginesRoot enginesRoot)
-            {
-                _persistentEntityFilters = enginesRoot._persistentEntityFilters;
-                _indicesOfPersistentFiltersUsedByThisComponent =
-                    enginesRoot._indicesOfPersistentFiltersUsedByThisComponent;
-                _transientEntityFilters = enginesRoot._transientEntityFilters;
-            }
+            static readonly SharedStatic<int, FilterHelper> uniqueContextID = new SharedStatic<int, FilterHelper>(1);
 #if UNITY_BURST
+            public ref EntityFilterCollection GetOrCreatePersistentFilter<T>(int filterID, FilterContextID filterContextId,
+                NativeRefWrapperType typeRef) where T : unmanaged, IEntityComponent
+            {
+                return ref GetOrCreatePersistentFilter<T>(new CombinedFilterID(filterID, filterContextId), typeRef);
+            }
+            
             public ref EntityFilterCollection GetOrCreatePersistentFilter<T>(CombinedFilterID filterID,
                 NativeRefWrapperType typeRef) where T : unmanaged, IEntityComponent
             {
-                long combineFilterIDs = EnginesRoot.CombineFilterIDs<T>(filterID);
+                long combineFilterIDs = FilterHelper.CombineFilterIDs<T>(filterID);
 
                 if (_persistentEntityFilters.TryFindIndex(combineFilterIDs, out var index) == true)
                     return ref _persistentEntityFilters.GetDirectValueByRef(index);
@@ -105,10 +121,16 @@ namespace Svelto.ECS
             /// </summary>
             /// <typeparam name="T"></typeparam>
             /// <returns></returns>
+            public EntityFilterCollection GetOrCreatePersistentFilter<T>(int filterID, FilterContextID filterContextId)
+                where T : unmanaged, IEntityComponent
+            {
+                return GetOrCreatePersistentFilter<T>(new CombinedFilterID(filterID, filterContextId));
+            }
+            
             public ref EntityFilterCollection GetOrCreatePersistentFilter<T>(CombinedFilterID filterID)
                 where T : unmanaged, IEntityComponent
             {
-                long combineFilterIDs = EnginesRoot.CombineFilterIDs<T>(filterID);
+                long combineFilterIDs = FilterHelper.CombineFilterIDs<T>(filterID);
 
                 if (_persistentEntityFilters.TryFindIndex(combineFilterIDs, out var index) == true)
                     return ref _persistentEntityFilters.GetDirectValueByRef(index);
@@ -121,15 +143,21 @@ namespace Svelto.ECS
                 var lastIndex = _persistentEntityFilters.count - 1;
 
                 _indicesOfPersistentFiltersUsedByThisComponent.GetOrAdd(new NativeRefWrapperType(typeRef),
-                    () => new NativeDynamicArrayCast<int>(1, Allocator.Persistent)).Add(lastIndex);
+                    () => new NativeDynamicArrayCast<int>(1, Svelto.Common.Allocator.Persistent)).Add(lastIndex);
 
                 return ref _persistentEntityFilters.GetDirectValueByRef((uint)lastIndex);
+            }
+            
+            public EntityFilterCollection GetPersistentFilter<T>(int filterID, FilterContextID filterContextId)
+                where T : unmanaged, IEntityComponent
+            {
+                return GetPersistentFilter<T>(new CombinedFilterID(filterID, filterContextId));
             }
 
             public ref EntityFilterCollection GetPersistentFilter<T>(CombinedFilterID filterID)
                 where T : unmanaged, IEntityComponent
             {
-                long combineFilterIDs = EnginesRoot.CombineFilterIDs<T>(filterID);
+                long combineFilterIDs = FilterHelper.CombineFilterIDs<T>(filterID);
 
                 if (_persistentEntityFilters.TryFindIndex(combineFilterIDs, out var index) == true)
                     return ref _persistentEntityFilters.GetDirectValueByRef(index);
@@ -145,7 +173,7 @@ namespace Svelto.ECS
             public ref EntityFilterCollection GetOrCreateTransientFilter<T>(CombinedFilterID filterID)
                 where T : unmanaged, IEntityComponent
             {
-                var combineFilterIDs = EnginesRoot.CombineFilterIDs<T>(filterID);
+                var combineFilterIDs = FilterHelper.CombineFilterIDs<T>(filterID);
 
                 if (_transientEntityFilters.TryFindIndex(combineFilterIDs, out var index))
                     return ref _transientEntityFilters.GetDirectValueByRef(index);
@@ -156,6 +184,11 @@ namespace Svelto.ECS
 
                 return ref _transientEntityFilters.GetDirectValueByRef((uint)(_transientEntityFilters.count - 1));
             }
+
+            readonly SharedSveltoDictionaryNative<long, EntityFilterCollection> _persistentEntityFilters;
+            readonly SharedSveltoDictionaryNative<NativeRefWrapperType, NativeDynamicArrayCast<int>>
+                _indicesOfPersistentFiltersUsedByThisComponent;
+            readonly SharedSveltoDictionaryNative<long, EntityFilterCollection> _transientEntityFilters;
         }
     }
 }
