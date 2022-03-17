@@ -65,7 +65,7 @@
      <Compile Include="Packages\com.sebaslab.svelto.common\Utilities\Console.cs" />
      <Compile Include="Packages\com.sebaslab.svelto.common\Context\ContextNotifier.cs" />
      <Compile Include="Packages\com.sebaslab.svelto.common\Utilities\FastInvoke.cs" />
-     <Compile Include="Packages\com.sebaslab.svelto.common\Utilities\SharedStatic.cs" />
+     <Compile Include="Packages\com.sebaslab.svelto.common\Utilities\SharedStaticWrapper.cs" />
      <Compile Include="Packages\com.sebaslab.svelto.common\DataStructures\Dictionaries\SveltoDictionaryNative.cs" />
      <Compile Include="Packages\com.sebaslab.svelto.common\ObjectPool\IObjectPool.cs" />
      <Compile Include="Packages\com.sebaslab.svelto.common\DataStructures\Sentinel\SentinelNativeStrategy.cs" />

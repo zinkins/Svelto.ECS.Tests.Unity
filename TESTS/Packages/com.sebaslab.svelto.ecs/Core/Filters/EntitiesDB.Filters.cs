@@ -4,7 +4,8 @@ using Svelto.Common;
 using Svelto.DataStructures;
 using Svelto.DataStructures.Native;
 using Svelto.ECS.DataStructures;
-using Unity.Burst;
+using UnityEngine;
+using Allocator = Svelto.Common.Allocator;
 
 namespace Svelto.ECS
 {
@@ -28,24 +29,40 @@ namespace Svelto.ECS
         {
             id = (long)filterID << 32 | (uint)contextID.id << 16;
         }
+        
+        public static implicit operator CombinedFilterID((int filterID, FilterContextID contextID) data)
+        {
+            return new CombinedFilterID(data.filterID, data.contextID);
+        }
     }
     
     public class FilterHelper
     {
-        class TypeCounter<T>
-        {
-            internal static readonly SharedStatic<int, TypeCounter<T>> id = new SharedStatic<int, TypeCounter<T>>();
+        static readonly SharedStaticWrapper<int, FilterHelper> idCounter = new SharedStaticWrapper<int, FilterHelper>(0);
 
+        public static class TypeCounter<T>
+        {
+            public static readonly int id;
+            
             static TypeCounter()
             {
-                Interlocked.Increment(ref id.Data);
-
-                DBC.ECS.Check.Ensure(id.Data < ushort.MaxValue, "too many types registered, HOW :)");
+                id = Interlocked.Increment(ref idCounter.Data);
+                
+                DBC.ECS.Check.Ensure(id < ushort.MaxValue, "too many types registered, HOW :)");
             }
         }
 
-        internal static long CombineFilterIDs<T>(CombinedFilterID combinedFilterID) =>
-            (long)combinedFilterID.id | (uint)TypeCounter<T>.id.Data;
+        //since the user can choose their own filterID, in order to avoid collisions between
+        //filters of the same type, the FilterContext is provided. The type is identified through
+        //TypeCounter
+        public static long CombineFilterIDs<T>(CombinedFilterID combinedFilterID)
+        {
+            var id               = (uint)TypeCounter<T>.id;
+            
+            var combineFilterIDs = (long)combinedFilterID.id | id;
+            
+            return combineFilterIDs;
+        }
     }
 
     public partial class EntitiesDB
@@ -76,7 +93,7 @@ namespace Svelto.ECS
                 _transientEntityFilters                        = transientEntityFilters;
             }
 
-            static readonly SharedStatic<int, FilterHelper> uniqueContextID = new SharedStatic<int, FilterHelper>(1);
+            static readonly SharedStaticWrapper<int, FilterHelper> uniqueContextID = new SharedStaticWrapper<int, FilterHelper>(1);
 #if UNITY_BURST
             public ref EntityFilterCollection GetOrCreatePersistentFilter<T>(int filterID, FilterContextID filterContextId,
                 NativeRefWrapperType typeRef) where T : unmanaged, IEntityComponent
@@ -92,9 +109,7 @@ namespace Svelto.ECS
                 if (_persistentEntityFilters.TryFindIndex(combineFilterIDs, out var index) == true)
                     return ref _persistentEntityFilters.GetDirectValueByRef(index);
 
-                var filterCollection = EntityFilterCollection.Create();
-
-                _persistentEntityFilters.Add(combineFilterIDs, filterCollection);
+                _persistentEntityFilters.Add(combineFilterIDs, EntityFilterCollection.Create());
 
                 var lastIndex = _persistentEntityFilters.count - 1;
 
@@ -121,12 +136,17 @@ namespace Svelto.ECS
             /// </summary>
             /// <typeparam name="T"></typeparam>
             /// <returns></returns>
+#if UNITY_BURST && UNITY_COLLECTIONS
+            [Unity.Collections.NotBurstCompatible]
+#endif                        
             public EntityFilterCollection GetOrCreatePersistentFilter<T>(int filterID, FilterContextID filterContextId)
                 where T : unmanaged, IEntityComponent
             {
                 return GetOrCreatePersistentFilter<T>(new CombinedFilterID(filterID, filterContextId));
             }
-            
+#if UNITY_BURST && UNITY_COLLECTIONS
+            [Unity.Collections.NotBurstCompatible]
+#endif            
             public ref EntityFilterCollection GetOrCreatePersistentFilter<T>(CombinedFilterID filterID)
                 where T : unmanaged, IEntityComponent
             {

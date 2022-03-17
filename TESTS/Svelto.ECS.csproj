@@ -64,7 +64,6 @@
      <Compile Include="Packages\com.sebaslab.svelto.ecs\Core\Hybrid\IEntityDescriptorHolder.cs" />
      <Compile Include="Packages\com.sebaslab.svelto.ecs\Core\CheckEntityUtilities.cs" />
      <Compile Include="Packages\com.sebaslab.svelto.ecs\Serialization\HashNameAttribute.cs" />
-     <Compile Include="Packages\com.sebaslab.svelto.ecs\Core\Streams\ThreadSafeNativeEntityStream.cs" />
      <Compile Include="Packages\com.sebaslab.svelto.ecs\Serialization\SimpleSerializationData.cs" />
      <Compile Include="Packages\com.sebaslab.svelto.ecs\Core\QueryGroups.cs" />
      <Compile Include="Packages\com.sebaslab.svelto.ecs\Core\Hybrid\ValueReference.cs" />

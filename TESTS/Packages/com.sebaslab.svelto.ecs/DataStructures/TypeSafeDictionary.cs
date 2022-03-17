@@ -782,7 +782,7 @@ namespace Svelto.ECS.Internal
 
         SveltoDictionary<uint, TValue, ManagedStrategy<SveltoDictionaryNode<uint>>, ManagedStrategy<TValue>,
             ManagedStrategy<int>> implMgd;
-
+        
         internal SveltoDictionary<uint, TValue, NativeStrategy<SveltoDictionaryNode<uint>>, NativeStrategy<TValue>,
             NativeStrategy<int>> implUnmgd;
     }

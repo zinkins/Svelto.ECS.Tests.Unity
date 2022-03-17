@@ -42,6 +42,8 @@ namespace Svelto.ECS.Native
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        ///Note: if I use a SharedNativeSveltoDictionary for implUnmg, I may be able to cache NativeEGIDMultiMapper
+        /// and reuse it
         public static NativeEGIDMultiMapper<T> QueryNativeMappedEntities<T>(this EntitiesDB entitiesDb,
                     LocalFasterReadOnlyList<ExclusiveGroupStruct> groups, Allocator allocator)
             where T : unmanaged, IEntityComponent

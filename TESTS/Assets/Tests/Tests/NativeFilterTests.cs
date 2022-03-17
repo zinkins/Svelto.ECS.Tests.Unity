@@ -2,14 +2,17 @@
 
 using System;
 using NUnit.Framework;
+using Svelto.Common;
 using Svelto.DataStructures;
 using Svelto.DataStructures.Native;
 using Svelto.ECS;
+using Svelto.ECS.DataStructures;
 using Svelto.ECS.Native;
 using Svelto.ECS.Schedulers;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using UnityEngine.ParticleSystemJobs;
 
 public class TestsForBurstTeam
 {
@@ -55,6 +58,19 @@ public class TestsForBurstTeam
         Assert.Pass();
     }
 #endif
+    
+    [Test]
+    //This test will fail, but only the first time it runs!
+    public void TestSimpleBuildArrayAndWriteInToIt()
+    {
+        var job = new BuildArrayAndWriteInToIt()
+        {
+        };
+            
+        job.Run();
+    
+        Assert.That(FilterHelper.TypeCounter<NativeSelfReferenceComponent>.id, Is.EqualTo(1));
+    }
 
     [Test]
     //This test will fail, but only the first time it runs!
@@ -64,22 +80,22 @@ public class TestsForBurstTeam
         {
             factory = _factory.ToNative<TestDescriptor>("TestNative"), group = TestGroupA,
         }.Run();
-
+        
         _scheduler.SubmitEntities();
         var filters = _engine.entitiesDB.GetFilters();
-
+        
         new CreateFilterAndAddEntitiesInFilters
         {
             filters         = filters, group = TestGroupA,
             typeRef         = new NativeRefWrapperType(new RefWrapperType(typeof(NativeSelfReferenceComponent))),
             filterContextId = _filterContextId
         }.Run();
-
+        
         EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>(0, _filterContextId);
-
+        
         Assert.That(filter.GetGroupFilter(TestGroupA).count, Is.EqualTo(10));
     }
-
+    
     [Test]
     //This test will succeed, this means that allocating native memory outside the job and then fetching
     //it inside the job will work.1
@@ -87,7 +103,8 @@ public class TestsForBurstTeam
     {
         new CreateEntitiesJob
         {
-            factory = _factory.ToNative<TestDescriptor>("TestNative"), group = TestGroupA,
+            factory = _factory.ToNative<TestDescriptor>("TestNative"), 
+            group = TestGroupA,
         }.Run();
 
         _scheduler.SubmitEntities();
@@ -96,7 +113,9 @@ public class TestsForBurstTeam
 
         new AddEntitiesInFilters
         {
-            filters = filters, group = TestGroupA, filterContextId = _filterContextId
+            filters = filters, 
+            group = TestGroupA, 
+            filterContextId = _filterContextId
         }.Run();
 
         EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>(0, _filterContextId);
@@ -189,10 +208,22 @@ public class TestsForBurstTeam
 
         public void Execute()
         {
-            var filter = filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(0, filterContextId, typeRef);
+            ref var filter = ref filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(0, filterContextId, typeRef);
 
             for (int index = 0; index < 10; index++)
                 filter.Add(new EGID((uint)index, group), (uint)index);
+        }
+    }
+
+    [BurstCompile]
+    struct BuildArrayAndWriteInToIt : IJob
+    {
+        public void Execute()
+        {
+            FilterHelper.CombineFilterIDs<NativeSelfReferenceComponent>(default);
+            FilterHelper.CombineFilterIDs<NativeSelfReferenceComponent>(default);
+            FilterHelper.CombineFilterIDs<NativeSelfReferenceComponent>(default);
+            FilterHelper.CombineFilterIDs<NativeSelfReferenceComponent>(default);
         }
     }
 
