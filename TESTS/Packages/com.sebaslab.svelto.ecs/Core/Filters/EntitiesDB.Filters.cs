@@ -4,7 +4,6 @@ using Svelto.Common;
 using Svelto.DataStructures;
 using Svelto.DataStructures.Native;
 using Svelto.ECS.DataStructures;
-using UnityEngine;
 using Allocator = Svelto.Common.Allocator;
 
 namespace Svelto.ECS

@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Svelto.Common;
 using Svelto.DataStructures;
 using Svelto.DataStructures.Native;
+using Svelto.ECS.DataStructures;
 using Svelto.ECS.Internal;
 
 namespace Svelto.ECS.Native
@@ -31,7 +32,7 @@ namespace Svelto.ECS.Native
                                                            out NativeEGIDMapper<T> mapper)
             where T : unmanaged, IEntityComponent
         {
-            mapper = default;
+            mapper = NativeEGIDMapper<T>.empty;
             if (entitiesDb.SafeQueryEntityDictionary<T>(groupStructId, out var typeSafeDictionary) == false ||
                 typeSafeDictionary.count == 0)
                 return false;
@@ -48,17 +49,19 @@ namespace Svelto.ECS.Native
                     LocalFasterReadOnlyList<ExclusiveGroupStruct> groups, Allocator allocator)
             where T : unmanaged, IEntityComponent
         {
-            var dictionary = new SveltoDictionary<ExclusiveGroupStruct, //key 
-                    SveltoDictionary<uint, T, 
-                        NativeStrategy<SveltoDictionaryNode<uint>>, NativeStrategy<T>, NativeStrategy<int>>, //value 
-                        NativeStrategy<SveltoDictionaryNode<ExclusiveGroupStruct>>, //strategy to store the key
-                    NativeStrategy<SveltoDictionary<uint, T, NativeStrategy<SveltoDictionaryNode<uint>>, NativeStrategy<T>, NativeStrategy<int>>>, NativeStrategy<int>> //strategy to store the value 
+            var dictionary = new SveltoDictionary<
+                    /*key  */ExclusiveGroupStruct,  
+                    /*value*/SharedNative<SveltoDictionary<uint, T, NativeStrategy<SveltoDictionaryNode<uint>>, NativeStrategy<T>, NativeStrategy<int>>>, 
+                    /*strategy to store the key*/  NativeStrategy<SveltoDictionaryNode<ExclusiveGroupStruct>>, 
+                    /*strategy to store the value*/NativeStrategy<
+                             SharedNative<SveltoDictionary<uint, T, NativeStrategy<SveltoDictionaryNode<uint>>, NativeStrategy<T>, NativeStrategy<int>>>>
+                  , NativeStrategy<int>>  
                     ((uint) groups.count, allocator);
         
             foreach (var group in groups)
             {
                 if (entitiesDb.SafeQueryEntityDictionary<T>(group, out var typeSafeDictionary) == true)
-                    if (typeSafeDictionary.count > 0)
+                    //if (typeSafeDictionary.count > 0)
                         dictionary.Add(group, ((TypeSafeDictionary<T>)typeSafeDictionary).implUnmgd);
             }
             

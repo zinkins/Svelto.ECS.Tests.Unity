@@ -91,7 +91,7 @@ public class TestsForBurstTeam
             filterContextId = _filterContextId
         }.Run();
         
-        EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>(0, _filterContextId);
+        EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>(1, _filterContextId);
         
         Assert.That(filter.GetGroupFilter(TestGroupA).count, Is.EqualTo(10));
     }
@@ -208,7 +208,7 @@ public class TestsForBurstTeam
 
         public void Execute()
         {
-            ref var filter = ref filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(0, filterContextId, typeRef);
+            ref var filter = ref filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(1, filterContextId, typeRef);
 
             for (int index = 0; index < 10; index++)
                 filter.Add(new EGID((uint)index, group), (uint)index);
