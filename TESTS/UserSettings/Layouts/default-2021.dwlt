@@ -14,17 +14,65 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_PixelRect:
     serializedVersion: 2
-    x: -1476
-    y: 114
-    width: 1434
-    height: 583
+    x: 3000
+    y: 0
+    width: 1920
+    height: 1032
   m_ShowMode: 0
-  m_Title: Test Runner
-  m_RootView: {fileID: 4}
-  m_MinSize: {x: 100, y: 121}
+  m_Title: Project Settings
+  m_RootView: {fileID: 6}
+  m_MinSize: {x: 310, y: 221}
   m_MaxSize: {x: 4000, y: 4021}
   m_Maximized: 0
 --- !u!114 &2
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 12004, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_PixelRect:
+    serializedVersion: 2
+    x: 3000
+    y: 0
+    width: 1920
+    height: 1032
+  m_ShowMode: 0
+  m_Title: Burst Inspector
+  m_RootView: {fileID: 8}
+  m_MinSize: {x: 100, y: 121}
+  m_MaxSize: {x: 4000, y: 4021}
+  m_Maximized: 0
+--- !u!114 &3
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 12004, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_PixelRect:
+    serializedVersion: 2
+    x: 3097
+    y: 128
+    width: 1583
+    height: 755
+  m_ShowMode: 0
+  m_Title: Package Manager
+  m_RootView: {fileID: 10}
+  m_MinSize: {x: 800, y: 271}
+  m_MaxSize: {x: 4000, y: 4021}
+  m_Maximized: 0
+--- !u!114 &4
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -38,17 +86,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_PixelRect:
     serializedVersion: 2
-    x: -1920
-    y: 55
+    x: 0
+    y: 43
     width: 1920
-    height: 1157
+    height: 989
   m_ShowMode: 4
   m_Title: Console
-  m_RootView: {fileID: 9}
+  m_RootView: {fileID: 15}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
   m_Maximized: 1
---- !u!114 &3
+--- !u!114 &5
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -58,23 +106,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: TestRunnerWindow
+  m_Name: ProjectSettingsWindow
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1434
-    height: 583
-  m_MinSize: {x: 100, y: 121}
+    width: 1920
+    height: 1032
+  m_MinSize: {x: 310, y: 221}
   m_MaxSize: {x: 4000, y: 4021}
-  m_ActualView: {fileID: 15}
+  m_ActualView: {fileID: 21}
   m_Panes:
-  - {fileID: 15}
+  - {fileID: 21}
   m_Selected: 0
   m_LastSelected: 0
---- !u!114 &4
+--- !u!114 &6
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -87,18 +135,118 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Children:
-  - {fileID: 3}
+  - {fileID: 5}
   m_Position:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1434
-    height: 583
+    width: 1920
+    height: 1032
+  m_MinSize: {x: 310, y: 221}
+  m_MaxSize: {x: 4000, y: 4021}
+  vertical: 0
+  controlID: 174
+--- !u!114 &7
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: BurstInspectorGUI
+  m_EditorClassIdentifier: 
+  m_Children: []
+  m_Position:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1920
+    height: 1032
+  m_MinSize: {x: 100, y: 121}
+  m_MaxSize: {x: 4000, y: 4021}
+  m_ActualView: {fileID: 22}
+  m_Panes:
+  - {fileID: 22}
+  m_Selected: 0
+  m_LastSelected: 0
+--- !u!114 &8
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 12010, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Children:
+  - {fileID: 7}
+  m_Position:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1920
+    height: 1032
   m_MinSize: {x: 100, y: 121}
   m_MaxSize: {x: 4000, y: 4021}
   vertical: 0
-  controlID: 172
---- !u!114 &5
+  controlID: 16
+--- !u!114 &9
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: PackageManagerWindow
+  m_EditorClassIdentifier: 
+  m_Children: []
+  m_Position:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1583
+    height: 755
+  m_MinSize: {x: 800, y: 271}
+  m_MaxSize: {x: 4000, y: 4021}
+  m_ActualView: {fileID: 23}
+  m_Panes:
+  - {fileID: 23}
+  m_Selected: 0
+  m_LastSelected: 0
+--- !u!114 &10
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 12010, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Children:
+  - {fileID: 9}
+  m_Position:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1583
+    height: 755
+  m_MinSize: {x: 800, y: 271}
+  m_MaxSize: {x: 4000, y: 4021}
+  vertical: 0
+  controlID: 122
+--- !u!114 &11
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -111,19 +259,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Children:
+  - {fileID: 18}
   - {fileID: 12}
-  - {fileID: 6}
   m_Position:
     serializedVersion: 2
     x: 0
     y: 30
     width: 1920
-    height: 1107
+    height: 939
   m_MinSize: {x: 300, y: 200}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 81
---- !u!114 &6
+  controlID: 156
+--- !u!114 &12
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -141,15 +289,15 @@ MonoBehaviour:
     x: 1466
     y: 0
     width: 454
-    height: 1107
+    height: 939
   m_MinSize: {x: 275, y: 50}
   m_MaxSize: {x: 4000, y: 4000}
-  m_ActualView: {fileID: 17}
+  m_ActualView: {fileID: 25}
   m_Panes:
-  - {fileID: 17}
+  - {fileID: 25}
   m_Selected: 0
   m_LastSelected: 0
---- !u!114 &7
+--- !u!114 &13
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -167,15 +315,15 @@ MonoBehaviour:
     x: 0
     y: 0
     width: 362
-    height: 655
+    height: 331
   m_MinSize: {x: 201, y: 221}
   m_MaxSize: {x: 4001, y: 4021}
-  m_ActualView: {fileID: 18}
+  m_ActualView: {fileID: 26}
   m_Panes:
-  - {fileID: 18}
+  - {fileID: 26}
   m_Selected: 0
   m_LastSelected: 0
---- !u!114 &8
+--- !u!114 &14
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -191,18 +339,18 @@ MonoBehaviour:
   m_Position:
     serializedVersion: 2
     x: 0
-    y: 655
+    y: 331
     width: 1466
-    height: 452
-  m_MinSize: {x: 101, y: 121}
-  m_MaxSize: {x: 4001, y: 4021}
-  m_ActualView: {fileID: 21}
+    height: 608
+  m_MinSize: {x: 100, y: 100}
+  m_MaxSize: {x: 4000, y: 4000}
+  m_ActualView: {fileID: 29}
   m_Panes:
-  - {fileID: 16}
-  - {fileID: 21}
+  - {fileID: 24}
+  - {fileID: 29}
   m_Selected: 1
   m_LastSelected: 0
---- !u!114 &9
+--- !u!114 &15
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -215,22 +363,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Children:
-  - {fileID: 10}
-  - {fileID: 5}
+  - {fileID: 16}
   - {fileID: 11}
+  - {fileID: 17}
   m_Position:
     serializedVersion: 2
     x: 0
     y: 0
     width: 1920
-    height: 1157
+    height: 989
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
   m_UseTopView: 1
   m_TopViewHeight: 30
   m_UseBottomView: 1
   m_BottomViewHeight: 20
---- !u!114 &10
+--- !u!114 &16
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -252,7 +400,7 @@ MonoBehaviour:
   m_MinSize: {x: 0, y: 0}
   m_MaxSize: {x: 0, y: 0}
   m_LastLoadedLayoutName: 
---- !u!114 &11
+--- !u!114 &17
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -268,12 +416,37 @@ MonoBehaviour:
   m_Position:
     serializedVersion: 2
     x: 0
-    y: 1137
+    y: 969
     width: 1920
     height: 20
   m_MinSize: {x: 0, y: 0}
   m_MaxSize: {x: 0, y: 0}
---- !u!114 &12
+--- !u!114 &18
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 1
+  m_Script: {fileID: 12010, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Children:
+  - {fileID: 19}
+  - {fileID: 14}
+  m_Position:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1466
+    height: 939
+  m_MinSize: {x: 200, y: 200}
+  m_MaxSize: {x: 16192, y: 16192}
+  vertical: 1
+  controlID: 88
+--- !u!114 &19
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -287,43 +460,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Children:
   - {fileID: 13}
-  - {fileID: 8}
+  - {fileID: 20}
   m_Position:
     serializedVersion: 2
     x: 0
     y: 0
     width: 1466
-    height: 1107
-  m_MinSize: {x: 200, y: 200}
-  m_MaxSize: {x: 16192, y: 16192}
-  vertical: 1
-  controlID: 82
---- !u!114 &13
-MonoBehaviour:
-  m_ObjectHideFlags: 52
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 1
-  m_Script: {fileID: 12010, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Children:
-  - {fileID: 7}
-  - {fileID: 14}
-  m_Position:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1466
-    height: 655
+    height: 331
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 83
---- !u!114 &14
+  controlID: 164
+--- !u!114 &20
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -341,16 +489,16 @@ MonoBehaviour:
     x: 362
     y: 0
     width: 1104
-    height: 655
+    height: 331
   m_MinSize: {x: 200, y: 200}
   m_MaxSize: {x: 4000, y: 4000}
-  m_ActualView: {fileID: 19}
+  m_ActualView: {fileID: 27}
   m_Panes:
-  - {fileID: 19}
-  - {fileID: 20}
+  - {fileID: 27}
+  - {fileID: 28}
   m_Selected: 0
   m_LastSelected: 1
---- !u!114 &15
+--- !u!114 &21
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -359,372 +507,121 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 13401, guid: 0000000000000000e000000000000000, type: 0}
+  m_Script: {fileID: 13854, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_MinSize: {x: 310, y: 200}
+  m_MaxSize: {x: 4000, y: 4000}
+  m_TitleContent:
+    m_Text: Project Settings
+    m_Image: {fileID: -5712115415447495865, guid: 0000000000000000d000000000000000, type: 0}
+    m_Tooltip: 
+  m_Pos:
+    serializedVersion: 2
+    x: 3000
+    y: 0
+    width: 1920
+    height: 1011
+  m_ViewDataDictionary: {fileID: 0}
+  m_OverlayCanvas:
+    m_LastAppliedPresetName: Default
+    m_SaveData: []
+  m_PosLeft: {x: 0, y: 0}
+  m_PosRight: {x: 0, y: 0}
+  m_Scope: 1
+  m_SplitterFlex: 0.2
+  m_SearchText: 
+  m_TreeViewState:
+    scrollPos: {x: 0, y: 0}
+    m_SelectedIDs: 7754dad1
+    m_LastClickedID: -774220681
+    m_ExpandedIDs: a01a5fa600000000
+    m_RenameOverlay:
+      m_UserAcceptedRename: 0
+      m_Name: 
+      m_OriginalName: 
+      m_EditFieldRect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 0
+        height: 0
+      m_UserData: 0
+      m_IsWaitingForDelay: 0
+      m_IsRenaming: 0
+      m_OriginalEventType: 11
+      m_IsRenamingFilename: 0
+      m_ClientGUIView: {fileID: 0}
+    m_SearchString: 
+--- !u!114 &22
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffabd1fbe2ab3d59a50128c0669b5791, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 4000, y: 4000}
   m_TitleContent:
-    m_Text: Test Runner
+    m_Text: Burst Inspector
     m_Image: {fileID: 0}
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: -1476
-    y: 114
-    width: 1434
-    height: 562
+    x: 3000
+    y: 0
+    width: 1920
+    height: 1011
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
     m_SaveData: []
-  m_Spl:
-    ID: 202
-    splitterInitialOffset: 362
-    currentActiveSplitter: -1
-    realSizes:
-    - 216
-    - 276
-    relativeSizes:
-    - 0.4396423
-    - 0.5603577
-    minSizes:
-    - 32
-    - 32
-    maxSizes:
-    - 0
-    - 0
-    lastTotalSize: 492
-    splitSize: 6
-    xOffset: 0
-    m_Version: 1
-    oldRealSizes: 
-    oldMinSizes: 
-    oldMaxSizes: 
-    oldSplitSize: 0
-  m_TestTypeToolbarIndex: 1
-  m_PlayModeTestListGUI:
-    m_Window: {fileID: 0}
-    m_NewResultList: []
-    m_ResultText: 
-    m_ResultStacktrace: 
-    m_TestListState:
-      scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 
-      m_LastClickedID: 0
-      m_ExpandedIDs: 
-      m_RenameOverlay:
-        m_UserAcceptedRename: 0
-        m_Name: 
-        m_OriginalName: 
-        m_EditFieldRect:
-          serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
-        m_UserData: 0
-        m_IsWaitingForDelay: 0
-        m_IsRenaming: 0
-        m_OriginalEventType: 11
-        m_IsRenamingFilename: 0
-        m_ClientGUIView: {fileID: 0}
-      m_SearchString: 
-    m_TestRunnerUIFilter:
-      PassedHidden: 0
-      FailedHidden: 0
-      NotRunHidden: 0
-      m_SearchString: 
-      selectedCategoryMask: 0
-      availableCategories: []
-    m_SelectedOption: 0
-  m_EditModeTestListGUI:
-    m_Window: {fileID: 15}
-    m_NewResultList:
-    - id: 1000
-      uniqueId: '[Svelto.ECS.Unity.Tests][suite]'
-      name: Svelto.ECS.Unity.Tests
-      fullName: Svelto.ECS.Unity.Tests
-      resultStatus: 1
-      duration: 0.4988477
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 1
-      categories: []
-      parentId: 
-      parentUniqueId: 
-    - id: 1010
-      uniqueId: '[Tests][C:/Prgdir/Svelto/Svelto.ECS/Svelto.ECS.Tests.Unity/TESTS/Library/ScriptAssemblies/Tests.dll][suite]'
-      name: Tests.dll
-      fullName: C:/Prgdir/Svelto/Svelto.ECS/Svelto.ECS.Tests.Unity/TESTS/Library/ScriptAssemblies/Tests.dll
-      resultStatus: 1
-      duration: 0.4706162
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 1
-      categories: []
-      parentId: 1000
-      parentUniqueId: '[Svelto.ECS.Unity.Tests][suite]'
-    - id: 1001
-      uniqueId: Tests.dll/[Tests][NativeEntityFactoryTests][suite]
-      name: NativeEntityFactoryTests
-      fullName: NativeEntityFactoryTests
-      resultStatus: 1
-      duration: 2.3962407
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 1
-      categories: []
-      parentId: 1010
-      parentUniqueId: '[Tests][C:/Prgdir/Svelto/Svelto.ECS/Svelto.ECS.Tests.Unity/TESTS/Library/ScriptAssemblies/Tests.dll][suite]'
-    - id: 1004
-      uniqueId: Tests.dll/NativeEntityFactoryTests/[Tests][NativeEntityFactoryTests.TestParallelNativeInitializerReturningEntityReferencesMultipleJobs]
-      name: TestParallelNativeInitializerReturningEntityReferencesMultipleJobs
-      fullName: NativeEntityFactoryTests.TestParallelNativeInitializerReturningEntityReferencesMultipleJobs
-      resultStatus: 1
-      duration: 1.7466838
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Tests.dll/[Tests][NativeEntityFactoryTests][suite]
-    - id: 1002
-      uniqueId: Tests.dll/NativeEntityFactoryTests/[Tests][NativeEntityFactoryTests.TestParallelNativeInitializerReturningEntityReferencesWithoutReuse]
-      name: TestParallelNativeInitializerReturningEntityReferencesWithoutReuse
-      fullName: NativeEntityFactoryTests.TestParallelNativeInitializerReturningEntityReferencesWithoutReuse
-      resultStatus: 1
-      duration: 0.4387138
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Tests.dll/[Tests][NativeEntityFactoryTests][suite]
-    - id: 1003
-      uniqueId: Tests.dll/NativeEntityFactoryTests/[Tests][NativeEntityFactoryTests.TestParallelNativeInitializerReturningEntityReferencesWithReuse]
-      name: TestParallelNativeInitializerReturningEntityReferencesWithReuse
-      fullName: NativeEntityFactoryTests.TestParallelNativeInitializerReturningEntityReferencesWithReuse
-      resultStatus: 1
-      duration: 0.194545
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Tests.dll/[Tests][NativeEntityFactoryTests][suite]
-    - id: 1005
-      uniqueId: Tests.dll/[Tests][NativeFilterTests][suite]
-      name: NativeFilterTests
-      fullName: NativeFilterTests
-      resultStatus: 1
-      duration: 0.4688203
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 1
-      categories: []
-      parentId: 1010
-      parentUniqueId: '[Tests][C:/Prgdir/Svelto/Svelto.ECS/Svelto.ECS.Tests.Unity/TESTS/Library/ScriptAssemblies/Tests.dll][suite]'
-    - id: 1006
-      uniqueId: Tests.dll/NativeFilterTests/[Tests][NativeFilterTests.TestGettingFiltersInsideJobs]
-      name: TestGettingFiltersInsideJobs
-      fullName: NativeFilterTests.TestGettingFiltersInsideJobs
-      resultStatus: 1
-      duration: 0.4530013
-      messages: 
-      output: "Unexpected exception Burst.Compiler.IL.CompilerException: Missing
-        external function `name: System.Runtime.InteropServices.GCHandle::FreeHandle`
-        => `method: System.Runtime.InteropServices.GCHandle.FreeHandle(System.IntPtr
-        handle) -> void_aef4d46f9ec6d18a03913cfa3cd76414. Reason: Function pointer
-        cannot be IntPtr.Zero`\r\n\r\n  at Burst.Compiler.IL.Jit.JitBurstInitializeUtility.ResolveExternalFunctions
-        (System.Collections.Generic.List`1[T] unresolvedExternalFunctions, Burst.Compiler.IL.Jit.GetExternalFunctionPointerDelegate
-        getExternalFunctionPointer) [0x00158] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0
-        \r\n  at Burst.Compiler.IL.Jit.JitCacheLibraryManager.CallBurstInitializeFunction
-        (System.IntPtr libraryPtr, Burst.Compiler.IL.Jit.GetExternalFunctionPointerDelegate
-        getExternalFunctionPointer) [0x000fd] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0
-        \r\n  at Burst.Compiler.IL.Jit.JitCacheLibraryManager+<>c__DisplayClass7_2.<TryGetOrLoadLibrary>b__1
-        () [0x00000] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 \r\n  at Burst.Compiler.IL.Jit.JitCompiler.CompileMethodInternal
-        (Burst.Compiler.IL.Jit.JitResult result, System.Collections.Generic.List`1[T]
-        methodsToCompile, Burst.Compiler.IL.Jit.JitOptions jitOptions) [0x0068d]
-        in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 \r\n  at Burst.Compiler.IL.Jit.JitCompiler.CompileMethods
-        (Burst.Compiler.IL.Jit.JitMethodGroupRequest& request, Burst.Compiler.IL.Jit.JitCompilationRequestType
-        requestType) [0x00209] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 \r\n  at Burst.Compiler.IL.Jit.JitCompiler.CompileMethod
-        (Burst.Compiler.IL.Jit.MethodReferenceWithMethodRefString method, Burst.Compiler.IL.Jit.JitOptions
-        jitOptions, Burst.Compiler.IL.Jit.JitCompilationRequestType requestType)
-        [0x00023] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 \r\n  at Burst.Compiler.IL.Jit.JitCompilerService+CompilerThreadContext.Compile
-        (Burst.Compiler.IL.Jit.JitCompilerService+CompileJob job, Burst.Compiler.IL.Jit.JitCompilationRequestType
-        requestType) [0x00491] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 \n\nWhile
-        compiling job: System.Void Unity.Jobs.IJobForExtensions/ForJobStruct`1<NativeFilterTests/AddEntitiesInFilters>::Execute(T&,System.IntPtr,System.IntPtr,Unity.Jobs.LowLevel.Unsafe.JobRanges&,System.Int32)\nat
-        <empty>:line 0\r\n"
-      stacktrace: 'at NativeFilterTests.TestGettingFiltersInsideJobs () [0x000c6]
-        in C:\Prgdir\Svelto\Svelto.ECS\Svelto.ECS.Tests.Unity\TESTS\Assets\Tests\Tests\NativeFilterTests.cs:55
-
-'
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1005
-      parentUniqueId: Tests.dll/[Tests][NativeFilterTests][suite]
-    - id: 1011
-      uniqueId: Tests.dll/[Tests][suite]
-      name: Tests
-      fullName: Tests
-      resultStatus: 1
-      duration: 0.0385972
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 1
-      categories: []
-      parentId: 1010
-      parentUniqueId: '[Tests][C:/Prgdir/Svelto/Svelto.ECS/Svelto.ECS.Tests.Unity/TESTS/Library/ScriptAssemblies/Tests.dll][suite]'
-    - id: 1007
-      uniqueId: Tests.dll/Tests/[Tests][suite]
-      name: Tests
-      fullName: Tests.Tests
-      resultStatus: 1
-      duration: 0.0286986
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 1
-      categories: []
-      parentId: 1011
-      parentUniqueId: Tests.dll/[Tests][suite]
-    - id: 1008
-      uniqueId: Tests.dll/Tests/Tests/[Tests][Tests.Tests.Factory]
-      name: Factory
-      fullName: Tests.Tests.Factory
-      resultStatus: 1
-      duration: 0.0195262
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1007
-      parentUniqueId: Tests.dll/Tests/[Tests][suite]
-    - id: 1009
-      uniqueId: Tests.dll/Tests/Tests/[Tests][Tests.Tests.NativeFactory]
-      name: NativeFactory
-      fullName: Tests.Tests.NativeFactory
-      resultStatus: 1
-      duration: 0.0053966
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1007
-      parentUniqueId: Tests.dll/Tests/[Tests][suite]
-    m_ResultText: "TestGettingFiltersInsideJobs (0.453s)\n---\nat NativeFilterTests.TestGettingFiltersInsideJobs
-      () [0x000c6] in C:\\Prgdir\\Svelto\\Svelto.ECS\\Svelto.ECS.Tests.Unity\\TESTS\\Assets\\Tests\\Tests\\NativeFilterTests.cs:55\n---\nUnexpected
-      exception Burst.Compiler.IL.CompilerException: Missing external function `name:
-      System.Runtime.InteropServices.GCHandle::FreeHandle` => `method: System.Runtime.InteropServices.GCHandle.FreeHandle(System.IntPtr
-      handle) -> void_aef4d46f9ec6d18a03913cfa3cd76414. Reason: Function pointer
-      cannot be IntPtr.Zero`\r\n\r\n  at Burst.Compiler.IL.Jit.JitBurstInitializeUtility.ResolveExternalFunctions
-      (System.Collections.Generic.List`1[T] unresolvedExternalFunctions, Burst.Compiler.IL.Jit.GetExternalFunctionPointerDelegate
-      getExternalFunctionPointer) [0x00158] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0
-      \r\n  at Burst.Compiler.IL.Jit.JitCacheLibraryManager.CallBurstInitializeFunction
-      (System.IntPtr libraryPtr, Burst.Compiler.IL.Jit.GetExternalFunctionPointerDelegate
-      getExternalFunctionPointer) [0x000fd] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0
-      \r\n  at Burst.Compiler.IL.Jit.JitCacheLibraryManager+<>c__DisplayClass7_2.<TryGetOrLoadLibrary>b__1
-      () [0x00000] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 \r\n  at Burst.Compiler.IL.Jit.JitCompiler.CompileMethodInternal
-      (Burst.Compiler.IL.Jit.JitResult result, System.Collections.Generic.List`1[T]
-      methodsToCompile, Burst.Compiler.IL.Jit.JitOptions jitOptions) [0x0068d] in
-      <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 \r\n  at Burst.Compiler.IL.Jit.JitCompiler.CompileMethods
-      (Burst.Compiler.IL.Jit.JitMethodGroupRequest& request, Burst.Compiler.IL.Jit.JitCompilationRequestType
-      requestType) [0x00209] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 \r\n  at Burst.Compiler.IL.Jit.JitCompiler.CompileMethod
-      (Burst.Compiler.IL.Jit.MethodReferenceWithMethodRefString method, Burst.Compiler.IL.Jit.JitOptions
-      jitOptions, Burst.Compiler.IL.Jit.JitCompilationRequestType requestType) [0x00023]
-      in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 \r\n  at Burst.Compiler.IL.Jit.JitCompilerService+CompilerThreadContext.Compile
-      (Burst.Compiler.IL.Jit.JitCompilerService+CompileJob job, Burst.Compiler.IL.Jit.JitCompilationRequestType
-      requestType) [0x00491] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 \n\nWhile compiling
-      job: System.Void Unity.Jobs.IJobForExtensions/ForJobStruct`1<NativeFilterTests/AddEntitiesInFilters>::Execute(T&,System.IntPtr,System.IntPtr,Unity.Jobs.LowLevel.Unsafe.JobRanges&,System.Int32)\nat
-      <empty>:line 0"
-    m_ResultStacktrace: 'at NativeFilterTests.TestGettingFiltersInsideJobs () [0x000c6]
-      in C:\Prgdir\Svelto\Svelto.ECS\Svelto.ECS.Tests.Unity\TESTS\Assets\Tests\Tests\NativeFilterTests.cs:55
-
-'
-    m_TestListState:
-      scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 77107dee
-      m_LastClickedID: -293793673
-      m_ExpandedIDs: 415240d35cd86001e9ece11b3aafb3318359db413d385d67ffffff7f
-      m_RenameOverlay:
-        m_UserAcceptedRename: 0
-        m_Name: 
-        m_OriginalName: 
-        m_EditFieldRect:
-          serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
-        m_UserData: 0
-        m_IsWaitingForDelay: 0
-        m_IsRenaming: 0
-        m_OriginalEventType: 11
-        m_IsRenamingFilename: 0
-        m_ClientGUIView: {fileID: 0}
-      m_SearchString: 
-    m_TestRunnerUIFilter:
-      PassedHidden: 0
-      FailedHidden: 0
-      NotRunHidden: 0
-      m_SearchString: 
-      selectedCategoryMask: 0
-      availableCategories:
-      - Uncategorized
---- !u!114 &16
+  _targetCpu: 0
+  _disasmKind: 0
+  _oldDisasmKind: 0
+  _previousTargetIndex: 2
+  _safetyChecks: 0
+  _showBranchMarkers: 1
+  _enhancedDisassembly: 1
+  _searchFilter: 
+  _sameTargetButDifferentAssemblyKind: 0
+  _scrollPos: {x: 0, y: 300}
+  _selectedItem: TestsForBurstTeam.AddEntitiesInFilters - (IJob)
+  _isCompileError: 0
+--- !u!114 &23
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 13953, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_MinSize: {x: 800, y: 250}
+  m_MaxSize: {x: 4000, y: 4000}
+  m_TitleContent:
+    m_Text: Package Manager
+    m_Image: {fileID: -2824328813065806953, guid: 0000000000000000d000000000000000, type: 0}
+    m_Tooltip: 
+  m_Pos:
+    serializedVersion: 2
+    x: 3097
+    y: 128
+    width: 1583
+    height: 734
+  m_ViewDataDictionary: {fileID: 0}
+  m_OverlayCanvas:
+    m_LastAppliedPresetName: Default
+    m_SaveData: []
+--- !u!114 &24
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -780,7 +677,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: ec5c0000
     m_LastClickedID: 23788
-    m_ExpandedIDs: 00000000e85c0000ec5c000000ca9a3bffffff7f
+    m_ExpandedIDs: 
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -864,7 +761,7 @@ MonoBehaviour:
     m_GridSize: 64
   m_SkipHiddenPackages: 0
   m_DirectoriesAreaWidth: 207
---- !u!114 &17
+--- !u!114 &25
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -884,10 +781,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: -454
-    y: 85
+    x: 1466
+    y: 73
     width: 453
-    height: 1086
+    height: 918
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
@@ -905,7 +802,7 @@ MonoBehaviour:
   m_LockTracker:
     m_IsLocked: 0
   m_PreviewWindow: {fileID: 0}
---- !u!114 &18
+--- !u!114 &26
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -925,10 +822,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: -1920
-    y: 85
+    x: 0
+    y: 73
     width: 361
-    height: 634
+    height: 310
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
@@ -938,7 +835,7 @@ MonoBehaviour:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs: 
       m_LastClickedID: 0
-      m_ExpandedIDs: dcd7ffff3ad8ffff4ed9ffffacd9ffff02daffff60daffffe2dbffff42dcffff5cdeffffbcdeffffd8dfffff38e0ffff4ce1fffface1ffffaee5ffff0ce6ffff5ee6ffffd2e6ffff82e9ffff
+      m_ExpandedIDs: 54f3fffff6f3ffffa8f5ffff4ef6ffffe0f6ffff86f7ffff20f8ffffa6f8ffff20f9ffffc8f9ffff36fbffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -962,7 +859,7 @@ MonoBehaviour:
       m_IsLocked: 0
     m_CurrentSortingName: TransformSorting
   m_WindowGUID: 4c969a2b90040154d917609493e03593
---- !u!114 &19
+--- !u!114 &27
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -982,10 +879,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: -1558
-    y: 85
+    x: 362
+    y: 73
     width: 1102
-    height: 634
+    height: 310
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
@@ -1267,7 +1164,7 @@ MonoBehaviour:
   m_SceneVisActive: 1
   m_LastLockedObject: {fileID: 0}
   m_ViewIsLockedToObject: 0
---- !u!114 &20
+--- !u!114 &28
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1359,7 +1256,7 @@ MonoBehaviour:
   m_LowResolutionForAspectRatios: 01000000000000000000
   m_XRRenderMode: 0
   m_RenderTexture: {fileID: 0}
---- !u!114 &21
+--- !u!114 &29
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1379,10 +1276,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: -1920
-    y: 740
+    x: 0
+    y: 404
     width: 1465
-    height: 431
+    height: 587
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default

@@ -61,19 +61,6 @@ public class TestsForBurstTeam
     
     [Test]
     //This test will fail, but only the first time it runs!
-    public void TestSimpleBuildArrayAndWriteInToIt()
-    {
-        var job = new BuildArrayAndWriteInToIt()
-        {
-        };
-            
-        job.Run();
-    
-        Assert.That(FilterHelper.TypeCounter<NativeSelfReferenceComponent>.id, Is.EqualTo(1));
-    }
-
-    [Test]
-    //This test will fail, but only the first time it runs!
     public void TestCreatingAndModifyingFiltersInsideJob()
     {
         new CreateEntitiesJob
@@ -84,11 +71,43 @@ public class TestsForBurstTeam
         _scheduler.SubmitEntities();
         var filters = _engine.entitiesDB.GetFilters();
         
-        new CreateFilterAndAddEntitiesInFilters
+        new CreateFilterAndAddEntitiesInFiltersJob
         {
             filters         = filters, group = TestGroupA,
             typeRef         = new NativeRefWrapperType(new RefWrapperType(typeof(NativeSelfReferenceComponent))),
             filterContextId = _filterContextId
+        }.Run();
+        
+        EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>(1, _filterContextId);
+        
+        Assert.That(filter.GetGroupFilter(TestGroupA).count, Is.EqualTo(10));
+    }
+    
+    [Test]
+    //This test will fail, but only the first time it runs!
+    public void TestCreatingAndModifyingFiltersInsideAndUsingThemInAnotherJob()
+    {
+        new CreateEntitiesJob
+        {
+            factory = _factory.ToNative<TestDescriptor>("TestNative"), group = TestGroupA,
+        }.Run();
+        
+        _scheduler.SubmitEntities();
+        var filters = _engine.entitiesDB.GetFilters();
+        
+        new CreateFilterAndAddEntitiesInFiltersJob
+        {
+            filters         = filters, group = TestGroupA,
+            typeRef         = new NativeRefWrapperType(new RefWrapperType(typeof(NativeSelfReferenceComponent))),
+            filterContextId = _filterContextId
+        }.Run();
+        
+        new AddEntitiesInFiltersJob
+        {
+            filters         = filters, 
+            group           = TestGroupA, 
+            filterContextId = _filterContextId,
+            filterID = 1
         }.Run();
         
         EntityFilterCollection filter = filters.GetPersistentFilter<NativeSelfReferenceComponent>(1, _filterContextId);
@@ -111,7 +130,7 @@ public class TestsForBurstTeam
         var filters = _engine.entitiesDB.GetFilters();
         filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(0, _filterContextId);
 
-        new AddEntitiesInFilters
+        new AddEntitiesInFiltersJob
         {
             filters = filters, 
             group = TestGroupA, 
@@ -199,7 +218,7 @@ public class TestsForBurstTeam
     [BurstCompile]
     //This job will actually allocate the filter it's working with and then it will populate it.
     //However after the first time this job runs, for some reason the filter is found empty. 
-    struct CreateFilterAndAddEntitiesInFilters : IJob
+    struct CreateFilterAndAddEntitiesInFiltersJob : IJob
     {
         public ExclusiveGroupStruct     @group;
         public EntitiesDB.SveltoFilters filters;
@@ -216,28 +235,18 @@ public class TestsForBurstTeam
     }
 
     [BurstCompile]
-    struct BuildArrayAndWriteInToIt : IJob
-    {
-        public void Execute()
-        {
-            FilterHelper.CombineFilterIDs<NativeSelfReferenceComponent>(default);
-            FilterHelper.CombineFilterIDs<NativeSelfReferenceComponent>(default);
-            FilterHelper.CombineFilterIDs<NativeSelfReferenceComponent>(default);
-            FilterHelper.CombineFilterIDs<NativeSelfReferenceComponent>(default);
-        }
-    }
-
-    [BurstCompile]
     //This job assumes that the filter has been previously allocated. Populating it works as expected.
-    struct AddEntitiesInFilters : IJob
+    struct AddEntitiesInFiltersJob : IJob
     {
         public ExclusiveGroupStruct     @group;
         public EntitiesDB.SveltoFilters filters;
         public FilterContextID          filterContextId;
+        public int                             filterID;
+
 
         public void Execute()
         {
-            var combinedFilterID = new CombinedFilterID(0, filterContextId);
+            var combinedFilterID = new CombinedFilterID(filterID, filterContextId);
             var filter           = filters.GetPersistentFilter<NativeSelfReferenceComponent>(combinedFilterID);
 
             for (int index = 0; index < 10; index++)

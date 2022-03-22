@@ -1,5 +1,6 @@
 ﻿namespace Svelto.Common
 {
+    //Note: SharedStatic MUST always be initialised outside burst otherwise undefined behaviour will happen
     public struct SharedStaticWrapper<T, Key> where T : unmanaged
     {
 #if UNITY_BURST
