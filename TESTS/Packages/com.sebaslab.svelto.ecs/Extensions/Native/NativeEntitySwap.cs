@@ -6,18 +6,18 @@ namespace Svelto.ECS.Native
     public readonly struct NativeEntitySwap
     {
         readonly AtomicNativeBags _swapQueue;
-        readonly int             _indexSwap;
+        readonly int             _nativeOperationIndex;
 
-        internal NativeEntitySwap(AtomicNativeBags EGIDsToSwap, int indexSwap)
+        internal NativeEntitySwap(AtomicNativeBags EGIDsToSwap, int nativeOperationIndex)
         {
             _swapQueue = EGIDsToSwap;
-            _indexSwap = indexSwap;
+            _nativeOperationIndex = nativeOperationIndex;
         }
 
         public void SwapEntity(EGID from, EGID to, int threadIndex)
         {
             var simpleNativeBag = _swapQueue.GetBuffer(threadIndex);
-            simpleNativeBag.Enqueue(_indexSwap);
+            simpleNativeBag.Enqueue(_nativeOperationIndex);
             simpleNativeBag.Enqueue(new DoubleEGID(from, to));
             
         }
@@ -25,7 +25,7 @@ namespace Svelto.ECS.Native
         public void SwapEntity(EGID from, ExclusiveBuildGroup to, int threadIndex)
         {
             var simpleNativeBag = _swapQueue.GetBuffer(threadIndex);
-            simpleNativeBag.Enqueue(_indexSwap);
+            simpleNativeBag.Enqueue(_nativeOperationIndex);
             simpleNativeBag.Enqueue(new DoubleEGID(from, new EGID(from.entityID, to)));
         }
     }

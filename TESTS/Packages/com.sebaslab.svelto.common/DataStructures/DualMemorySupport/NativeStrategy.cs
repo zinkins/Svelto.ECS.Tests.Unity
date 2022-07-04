@@ -24,13 +24,14 @@ namespace Svelto.DataStructures.Native
         }
 
         public int       capacity           => _realBuffer.capacity;
-        public Allocator allocationStrategy => _nativeAllocator;
 
         public void Alloc(uint newCapacity, Allocator allocator, bool clear)
         {
 #if DEBUG && !PROFILE_SVELTO
             if (!(this._realBuffer.ToNativeArray(out _) == IntPtr.Zero))
                 throw new DBC.Common.PreconditionException("can't alloc an already allocated buffer");
+            if (allocator != Allocator.Persistent && allocator != Allocator.Temp && allocator != Allocator.TempJob)
+                throw new Exception("invalid allocator used for native strategy");
 #endif
             _nativeAllocator = allocator;
 
@@ -46,7 +47,7 @@ namespace Svelto.DataStructures.Native
             {
                 IntPtr pointer = _realBuffer.ToNativeArray(out _);
                 pointer = MemoryUtilities.Realloc<T>(pointer, newSize, _nativeAllocator
-                                                   , (uint) newSize > capacity ? (uint) capacity : newSize
+                                                   , newSize > capacity ? (uint) capacity : newSize
                                                    , copyContent);
                 NB<T> b = new NB<T>(pointer, newSize);
                 _realBuffer    = b;

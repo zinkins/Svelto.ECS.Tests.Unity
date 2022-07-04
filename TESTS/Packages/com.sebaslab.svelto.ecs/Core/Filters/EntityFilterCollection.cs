@@ -1,32 +1,35 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using Svelto.Common;
 using Svelto.DataStructures.Native;
 using Svelto.ECS.Native;
 
 namespace Svelto.ECS
 {
-    public struct EntityFilterCollection
+    public readonly struct EntityFilterCollection
     {
-        public static EntityFilterCollection Create(Allocator allocatorStrategy = Allocator.Persistent)
+        internal EntityFilterCollection(CombinedFilterID combinedFilterId,
+            Allocator allocatorStrategy = Allocator.Persistent)
         {
-            var collection = new EntityFilterCollection
-            {
-                _filtersPerGroup = SharedSveltoDictionaryNative<ExclusiveGroupStruct, GroupFilters>.Create(allocatorStrategy)
-            };
-            return collection;
+            _filtersPerGroup =
+                SharedSveltoDictionaryNative<ExclusiveGroupStruct, GroupFilters>.Create(allocatorStrategy);
+
+            combinedFilterID = combinedFilterId;
         }
 
-        public EntityFilterIterator GetEnumerator() => new EntityFilterIterator(this);
+        public CombinedFilterID combinedFilterID { get; }
         
+        public EntityFilterIterator GetEnumerator()  => new EntityFilterIterator(this);
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Add<T>(EGID egid, NativeEGIDMapper<T> mmap) where T : unmanaged, IEntityComponent
+        public bool Add<T>(EGID egid, NativeEGIDMapper<T> mmap) where T : unmanaged, IBaseEntityComponent
         {
             DBC.ECS.Check.Require(mmap.groupID == egid.groupID, "not compatible NativeEgidMapper used");
-            
+
             return Add(egid, mmap.GetIndex(egid.entityID));
         }
-        
-        public bool Add<T>(EGID egid, NativeEGIDMultiMapper<T> mmap) where T : unmanaged, IEntityComponent
+
+        public bool Add<T>(EGID egid, NativeEGIDMultiMapper<T> mmap) where T : unmanaged, IBaseEntityComponent
         {
             return Add(egid, mmap.GetIndex(egid));
         }
@@ -34,11 +37,45 @@ namespace Svelto.ECS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Add(EGID egid, uint toIndex)
         {
-            return GetGroupFilter(egid.groupID).Add(egid.entityID, toIndex);
+            return GetOrCreateGroupFilter(egid.groupID).Add(egid.entityID, toIndex);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Add(uint entityID, ExclusiveGroupStruct groupId, uint index)
+        {
+            Add(new EGID(entityID, groupId), index);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public GroupFilters GetGroupFilter(ExclusiveGroupStruct group)
+        public void Remove(EGID egid)
+        {
+            _filtersPerGroup[egid.groupID].Remove(egid.entityID);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Remove(uint entityID, ExclusiveGroupStruct groupID)
+        {
+            _filtersPerGroup[groupID].Remove(entityID);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Exists(EGID egid)
+        {
+            if (TryGetGroupFilter(egid.groupID, out var groupFilter))
+            {
+                return groupFilter.Exists(egid.entityID);
+            }
+            return false;
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetGroupFilter(ExclusiveGroupStruct group, out GroupFilters groupFilter)
+        {
+            return _filtersPerGroup.TryGetValue(group, out groupFilter);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public GroupFilters GetOrCreateGroupFilter(ExclusiveGroupStruct group)
         {
             if (_filtersPerGroup.TryGetValue(group, out var groupFilter) == false)
             {
@@ -48,17 +85,14 @@ namespace Svelto.ECS
 
             return groupFilter;
         }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Remove(EGID egid)
+        public GroupFilters GetGroupFilter(ExclusiveGroupStruct group)
         {
-            _filtersPerGroup[egid.groupID].Remove(egid.entityID);
-        }
+            if (_filtersPerGroup.TryGetValue(group, out var groupFilter) == true)
+                return groupFilter;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Exists(EGID egid)
-        {
-            return GetGroupFilter(egid.groupID).Exists(egid.entityID);
+            throw new Exception($"no filter linked to group {group}");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -72,6 +106,16 @@ namespace Svelto.ECS
         }
 
         internal int groupCount => _filtersPerGroup.count;
+        
+        public void ComputeFinalCount(out int count)
+        {
+            count = 0;
+            
+            for (int i = 0; i < _filtersPerGroup.count; i++)
+            {
+                count += (int)GetGroup(i).count;
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal GroupFilters GetGroup(int indexGroup)
@@ -87,42 +131,39 @@ namespace Svelto.ECS
             {
                 filterSets[i].Dispose();
             }
+
             _filtersPerGroup.Dispose();
         }
 
-        internal SharedSveltoDictionaryNative<ExclusiveGroupStruct, GroupFilters> _filtersPerGroup;
+        internal readonly SharedSveltoDictionaryNative<ExclusiveGroupStruct, GroupFilters> _filtersPerGroup;
 
         public struct GroupFilters
         {
-            internal GroupFilters(ExclusiveGroupStruct group):this()
+            internal GroupFilters(ExclusiveGroupStruct group) : this()
             {
                 _entityIDToDenseIndex = new SharedSveltoDictionaryNative<uint, uint>(1);
-                _indexToEntityId      = new SharedSveltoDictionaryNative<uint, uint>(1);
                 _group                = group;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Add(uint entityId, uint entityIndex)
             {
                 //TODO: when sentinels are finished, we need to add AsWriter here
-                if (_entityIDToDenseIndex.TryAdd(entityId, entityIndex, out _))
-                {
-                    _indexToEntityId[entityIndex] = entityId;
-                    return true;
-                }
-
-                return false;
+                return _entityIDToDenseIndex.TryAdd(entityId, entityIndex, out _);
             }
-            
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Exists(uint entityId) => _entityIDToDenseIndex.ContainsKey(entityId);
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Remove(uint entityId)
             {
-                _indexToEntityId.Remove(_entityIDToDenseIndex[entityId]);
                 _entityIDToDenseIndex.Remove(entityId);
             }
-            
+
             public EntityFilterIndices indices
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
                     var values = _entityIDToDenseIndex.GetValues(out var count);
@@ -130,47 +171,29 @@ namespace Svelto.ECS
                 }
             }
 
-            public uint count => (uint)_entityIDToDenseIndex.count;
-            public bool isValid => _entityIDToDenseIndex.isValid;
-
-            internal void RemoveWithSwapBack(uint entityId, uint entityIndex, uint lastIndex)
+            public uint this[uint entityId]
             {
-                // Check if the last index is part of the filter as an entity, in that case
-                //we need to update the filter
-                if (entityIndex != lastIndex && _indexToEntityId.TryGetValue(lastIndex, out var lastEntityID))
-                {
-                    _entityIDToDenseIndex[lastEntityID] = entityIndex;
-                    _indexToEntityId[entityIndex]       = lastEntityID;
-
-                    _indexToEntityId.Remove(lastIndex);
-                }
-                else
-                {
-                    // We don't need to check if the entityIndex is a part of the dictionary.
-                    // The Remove function will check for us.
-                    _indexToEntityId.Remove(entityIndex);
-                }
-
-                // We don't need to check if the entityID is part of the dictionary.
-                // The Remove function will check for us.
-                _entityIDToDenseIndex.Remove(entityId);
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get => _entityIDToDenseIndex[entityId];
             }
 
+            public int count   => _entityIDToDenseIndex.count;
+            public bool isValid => _entityIDToDenseIndex.isValid;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal void Clear()
             {
-                _indexToEntityId.FastClear();
                 _entityIDToDenseIndex.FastClear();
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal void Dispose()
             {
                 _entityIDToDenseIndex.Dispose();
-                _indexToEntityId.Dispose();
             }
-            
+
             internal ExclusiveGroupStruct group => _group;
 
-            SharedSveltoDictionaryNative<uint, uint>          _indexToEntityId;
             internal SharedSveltoDictionaryNative<uint, uint> _entityIDToDenseIndex;
             readonly ExclusiveGroupStruct                     _group;
         }

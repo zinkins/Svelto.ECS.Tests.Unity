@@ -198,9 +198,9 @@ namespace Svelto.DataStructures
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Remove(TKey key, out TValue o)
+        public bool Remove(TKey key, out TValue val)
         {
-            return _dictionary.Remove(key, out o);
+            return _dictionary.Remove(key, out _, out val);
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

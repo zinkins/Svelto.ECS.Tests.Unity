@@ -18,19 +18,24 @@ namespace Svelto.DataStructures.Native
     public struct SharedSveltoDictionaryNative<TKey, TValue>
         where TKey : unmanaged, IEquatable<TKey> where TValue : struct
     {
-        public static SharedSveltoDictionaryNative<TKey,TValue> Create()
+        public static SharedSveltoDictionaryNative<TKey, TValue> Create
+            (Allocator allocatorStrategy = Allocator.Persistent)
         {
-            return new SharedSveltoDictionaryNative<TKey, TValue>(0);
+            return new SharedSveltoDictionaryNative<TKey, TValue>(0, allocatorStrategy);
         }
-        
-        public SharedSveltoDictionaryNative(uint size)
+
+        public SharedSveltoDictionaryNative(uint size, Allocator allocatorStrategy = Allocator.Persistent)
         {
             var dictionary =
                 new SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>, NativeStrategy<TValue>,
-                NativeStrategy<int>>(size, Allocator.Persistent);
-            
-            _sharedDictionary = MemoryUtilities.Alloc<SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>, NativeStrategy<TValue>,
-                NativeStrategy<int>>>(1, Allocator.Persistent);
+                    NativeStrategy<int>>(size, allocatorStrategy);
+
+            _sharedDictionary =
+                MemoryUtilities
+                   .Alloc<SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>,
+                        NativeStrategy<TValue>, NativeStrategy<int>>>(1, allocatorStrategy);
+
+            _allocatorStrategy = allocatorStrategy;
 
             this.dictionary = dictionary;
         }
@@ -38,10 +43,10 @@ namespace Svelto.DataStructures.Native
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public NB<TValue> GetValues(out uint count)
         {
-            count = (uint) this.count;
+            count = (uint)this.count;
             return dictionary._values.ToRealBuffer();
         }
-        
+
         public NB<TValue> unsafeValues
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -64,7 +69,7 @@ namespace Svelto.DataStructures.Native
         {
             dictionary.Add(key, in value);
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryAdd(TKey key, in TValue value, out uint index)
         {
@@ -130,7 +135,7 @@ namespace Svelto.DataStructures.Native
         {
             dictionary.EnsureCapacity(size);
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void IncreaseCapacityBy(uint size)
         {
@@ -175,24 +180,24 @@ namespace Svelto.DataStructures.Native
 #if DEBUG && !PROFILE_SVELTO
             if (_sharedDictionary == null)
                 throw new Exception("SharedSveltoDictionary: try to dispose an already disposed array");
-#endif                
-            
+#endif
             dictionary.Dispose();
-            
-            MemoryUtilities.Free(_sharedDictionary, Allocator.Persistent);
+
+            MemoryUtilities.Free(_sharedDictionary, _allocatorStrategy);
             _sharedDictionary = IntPtr.Zero;
         }
 
-        ref SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>, NativeStrategy<TValue>, NativeStrategy<int>>
-            dictionary
+        public ref SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>, NativeStrategy<TValue>,
+            NativeStrategy<int>> dictionary
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 unsafe
                 {
-                    return ref Unsafe.AsRef<SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>,
-                        NativeStrategy<TValue>, NativeStrategy<int>>>((void*) _sharedDictionary);
+                    return ref Unsafe
+                       .AsRef<SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>,
+                            NativeStrategy<TValue>, NativeStrategy<int>>>((void*)_sharedDictionary);
                 }
             }
         }
@@ -201,5 +206,7 @@ namespace Svelto.DataStructures.Native
         [Unity.Collections.LowLevel.Unsafe.NativeDisableUnsafePtrRestriction]
 #endif
         IntPtr _sharedDictionary;
+
+        readonly Allocator _allocatorStrategy;
     }
 }

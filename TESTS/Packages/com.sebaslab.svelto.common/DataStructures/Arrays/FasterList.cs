@@ -1,3 +1,7 @@
+#if DEBUG && !PROFILE_SVELTO
+#define ENABLE_DEBUG_CHECKS
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -90,7 +94,10 @@ namespace Svelto.DataStructures
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                Check.Require(index < _count && _count > 0, "out of bound index");
+#if ENABLE_DEBUG_CHECKS
+                    if (index >= _count)
+                        throw new Exception($"Fasterlist - out of bound access: index {index} - count {_count}");
+#endif                
                 return ref _buffer[(uint)index];
             }
         }
@@ -100,7 +107,10 @@ namespace Svelto.DataStructures
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                Check.Require(index < _count, $"out of bound index. index {index} - count {_count}");
+#if ENABLE_DEBUG_CHECKS
+                    if (index >= _count)
+                        throw new Exception($"Fasterlist - out of bound access: index {index} - count {_count}");
+#endif                
                 return ref _buffer[index];
             }
         }
@@ -122,6 +132,17 @@ namespace Svelto.DataStructures
             EnsureCountIsAtLeast(location + 1);
 
             _buffer[location] = item;
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref T GetOrCreate(uint location, in Func<T> item)
+        {
+            EnsureCountIsAtLeast(location + 1);
+
+            if (_comp.Equals(this[location], default) == true)
+                this[location] = item();
+
+            return ref this[location];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -6,19 +6,19 @@ namespace Svelto.ECS.Native
     public readonly struct NativeEntityRemove
     {
         readonly AtomicNativeBags _removeQueue;
-        readonly int             _indexRemove;
+        readonly int             _nativeOperationIndex;
 
-        internal NativeEntityRemove(AtomicNativeBags EGIDsToRemove, int indexRemove)
+        internal NativeEntityRemove(AtomicNativeBags EGIDsToRemove, int nativeOperationIndex)
         {
             _removeQueue = EGIDsToRemove;
-            _indexRemove = indexRemove;
+            _nativeOperationIndex = nativeOperationIndex;
         }
 
         public void RemoveEntity(EGID egid, int threadIndex)
         {
             var simpleNativeBag = _removeQueue.GetBuffer(threadIndex);
             
-            simpleNativeBag.Enqueue(_indexRemove);
+            simpleNativeBag.Enqueue(_nativeOperationIndex);
             simpleNativeBag.Enqueue(egid);
         }
     }

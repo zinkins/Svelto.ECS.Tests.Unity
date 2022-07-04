@@ -86,11 +86,6 @@ namespace Svelto.DataStructures
             }
         }
 
-        public T[] ToManagedArray()
-        {
-            throw new NotImplementedException();
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IntPtr ToNativeArray(out int capacity)
         {
@@ -118,8 +113,7 @@ namespace Svelto.DataStructures
 #endif
                     using (_threadSentinel.TestThreadSafety())
                     {
-                        var     size  = MemoryUtilities.SizeOf<T>();
-                        ref var asRef = ref Unsafe.AsRef<T>((void*)(_ptr + (int)(index * size)));
+                        ref var asRef = ref Unsafe.AsRef<T>((void*)(_ptr + (int)index * SIZE));
                         return ref asRef;
                     }
                 }
@@ -139,8 +133,7 @@ namespace Svelto.DataStructures
 #endif
                     using (_threadSentinel.TestThreadSafety())
                     {
-                        var     size  = MemoryUtilities.SizeOf<T>();
-                        ref var asRef = ref Unsafe.AsRef<T>((void*)(_ptr + (int)(index * size)));
+                        ref var asRef = ref Unsafe.AsRef<T>((void*)(_ptr + index * SIZE));
                         return ref asRef;
                     }
                 }
@@ -185,5 +178,7 @@ namespace Svelto.DataStructures
                 throw new NotImplementedException();
             }
         }
+        
+        static readonly int SIZE = MemoryUtilities.SizeOf<T>();
     }
 }

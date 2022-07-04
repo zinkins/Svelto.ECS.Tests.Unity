@@ -86,11 +86,6 @@ namespace Svelto.DataStructures
             }
         }
 
-        public T[] ToManagedArray()
-        {
-            throw new NotImplementedException();
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IntPtr ToNativeArray(out int capacity)
         {
@@ -138,7 +133,7 @@ namespace Svelto.DataStructures
 #endif
                     using (_threadSentinel.TestThreadSafety())
                     {
-                        ref var asRef = ref Unsafe.AsRef<T>((void*)(_ptr + (int)(index * SIZE)));
+                        ref var asRef = ref Unsafe.AsRef<T>((void*)(_ptr + index * SIZE));
                         return ref asRef;
                     }
                 }

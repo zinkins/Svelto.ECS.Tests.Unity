@@ -5,7 +5,6 @@ using Svelto.DataStructures;
 using Svelto.DataStructures.Native;
 using Svelto.ECS.DataStructures;
 
-
 namespace Svelto.ECS
 {
     public struct FilterContextID
@@ -18,11 +17,19 @@ namespace Svelto.ECS
 
             this.id = id;
         }
+
+        public static FilterContextID GetNewContextID()
+        {
+            return EntitiesDB.SveltoFilters.GetNewContextID();
+        }
     }
 
-    public struct CombinedFilterID
+    public readonly struct CombinedFilterID
     {
-        public readonly long id;
+        internal readonly long            id;
+        
+        public          FilterContextID contextID => new FilterContextID((uint)((id & 0xFFFF0000) >> 16));
+        public          uint            filterID   => (uint)(id >> 32);
 
         public CombinedFilterID(int filterID, FilterContextID contextID)
         {
@@ -41,7 +48,7 @@ namespace Svelto.ECS
         //since the user can choose their own filterID, in order to avoid collisions between
         //filters of the same type, the FilterContext is provided. The type is identified through
         //TypeCounter
-        public static long CombineFilterIDs<T>(CombinedFilterID combinedFilterID) where T: struct, IEntityComponent
+        public static long CombineFilterIDs<T>(CombinedFilterID combinedFilterID) where T: struct, IBaseEntityComponent
         {
             var id = (uint)ComponentID<T>.id.Data;
 
@@ -64,9 +71,12 @@ namespace Svelto.ECS
         /// </summary>
         public readonly struct SveltoFilters
         {
-            static readonly SharedStaticWrapper<int, Internal_FilterHelper> uniqueContextID =
-                new SharedStaticWrapper<int, Internal_FilterHelper>(1);
+            static readonly SharedStaticWrapper<int, Internal_FilterHelper> uniqueContextID;
             
+#if UNITY_BURST 
+            [Unity.Burst.BurstDiscard] 
+            //SharedStatic values must be initialized from not burstified code
+#endif            
             public static FilterContextID GetNewContextID()
             {
                 return new FilterContextID((uint)Interlocked.Increment(ref uniqueContextID.Data));
@@ -97,7 +107,7 @@ namespace Svelto.ECS
                 if (_persistentEntityFilters.TryFindIndex(combineFilterIDs, out var index) == true)
                     return ref _persistentEntityFilters.GetDirectValueByRef(index);
 
-                _persistentEntityFilters.Add(combineFilterIDs, EntityFilterCollection.Create());
+                _persistentEntityFilters.Add(combineFilterIDs, new EntityFilterCollection(filterID));
 
                 var lastIndex = _persistentEntityFilters.count - 1;
 
@@ -127,16 +137,16 @@ namespace Svelto.ECS
 #if UNITY_BURST && UNITY_COLLECTIONS
             [Unity.Collections.NotBurstCompatible]
 #endif
-            public EntityFilterCollection GetOrCreatePersistentFilter<T>(int filterID, FilterContextID filterContextId)
-                where T : unmanaged, IEntityComponent
+            public ref EntityFilterCollection GetOrCreatePersistentFilter<T>(int filterID, FilterContextID filterContextId)
+                where T : unmanaged, IBaseEntityComponent
             {
-                return GetOrCreatePersistentFilter<T>(new CombinedFilterID(filterID, filterContextId));
+                return ref GetOrCreatePersistentFilter<T>(new CombinedFilterID(filterID, filterContextId));
             }
 #if UNITY_BURST && UNITY_COLLECTIONS
             [Unity.Collections.NotBurstCompatible]
 #endif
             public ref EntityFilterCollection GetOrCreatePersistentFilter<T>(CombinedFilterID filterID)
-                where T : unmanaged, IEntityComponent
+                where T : unmanaged, IBaseEntityComponent
             {
                 long combineFilterIDs = Internal_FilterHelper.CombineFilterIDs<T>(filterID);
                 
@@ -144,7 +154,7 @@ namespace Svelto.ECS
                     return ref _persistentEntityFilters.GetDirectValueByRef(index);
 
                 var typeRef          = TypeRefWrapper<T>.wrapper;
-                var filterCollection = EntityFilterCollection.Create();
+                var filterCollection = new EntityFilterCollection(filterID);
 
                 _persistentEntityFilters.Add(combineFilterIDs, filterCollection);
 
@@ -156,14 +166,14 @@ namespace Svelto.ECS
                 return ref _persistentEntityFilters.GetDirectValueByRef((uint)lastIndex);
             }
 
-            public EntityFilterCollection GetPersistentFilter<T>(int filterID, FilterContextID filterContextId)
-                where T : unmanaged, IEntityComponent
+            public ref EntityFilterCollection GetPersistentFilter<T>(int filterID, FilterContextID filterContextId)
+                where T : unmanaged, IBaseEntityComponent
             {
-                return GetPersistentFilter<T>(new CombinedFilterID(filterID, filterContextId));
+                return ref GetPersistentFilter<T>(new CombinedFilterID(filterID, filterContextId));
             }
 
             public ref EntityFilterCollection GetPersistentFilter<T>(CombinedFilterID filterID)
-                where T : unmanaged, IEntityComponent
+                where T : unmanaged, IBaseEntityComponent
             {
                 long combineFilterIDs = Internal_FilterHelper.CombineFilterIDs<T>(filterID);
                 
@@ -173,7 +183,8 @@ namespace Svelto.ECS
                 throw new Exception("filter not found");
             }
             
-            public bool TryGetPersistentFilter<T>(CombinedFilterID combinedFilterID, out EntityFilterCollection entityCollection) where T : struct, IEntityComponent
+            public bool TryGetPersistentFilter<T>(CombinedFilterID combinedFilterID, out EntityFilterCollection entityCollection) 
+                where T : unmanaged, IBaseEntityComponent
             {
                 long combineFilterIDs = Internal_FilterHelper.CombineFilterIDs<T>(combinedFilterID);
                 
@@ -187,35 +198,66 @@ namespace Svelto.ECS
                 return false;
             }
 
-            public EntityFilterCollectionEnumerator GetPersistentFilters<T>() where T : unmanaged, IEntityComponent
+            public EntityFilterCollectionsEnumerator GetPersistentFilters<T>() where T : unmanaged, IBaseEntityComponent
             {
                 if (_indicesOfPersistentFiltersUsedByThisComponent.TryFindIndex(
                         new NativeRefWrapperType(new RefWrapperType(typeof(T))), out var index) == true)
-                    return new EntityFilterCollectionEnumerator(
+                    return new EntityFilterCollectionsEnumerator(
                         _indicesOfPersistentFiltersUsedByThisComponent.GetDirectValueByRef(index),
                         _persistentEntityFilters);
 
                 throw new Exception($"no filters associated with the type {TypeCache<T>.name}");
             }
-
-            public struct EntityFilterCollectionEnumerator
+            
+            public EntityFilterCollectionsWithContextEnumerator GetPersistentFilters<T>(FilterContextID filterContextId)
             {
-                public EntityFilterCollectionEnumerator(NativeDynamicArrayCast<int> getDirectValueByRef,
+                if (_indicesOfPersistentFiltersUsedByThisComponent.TryFindIndex(
+                        new NativeRefWrapperType(new RefWrapperType(typeof(T))), out var index) == true)
+                    return new EntityFilterCollectionsWithContextEnumerator(
+                        _indicesOfPersistentFiltersUsedByThisComponent.GetDirectValueByRef(index),
+                        _persistentEntityFilters, filterContextId);
+
+                throw new Exception($"no filters associated with the type {TypeCache<T>.name}");
+            }
+            
+            public bool TryGetPersistentFilters<T>(FilterContextID filterContextId, out EntityFilterCollectionsWithContextEnumerator enumerator)
+            {
+                if (_indicesOfPersistentFiltersUsedByThisComponent.TryFindIndex(
+                        new NativeRefWrapperType(new RefWrapperType(typeof(T))), out var index) == true)
+                {
+                    enumerator = new EntityFilterCollectionsWithContextEnumerator(
+                        _indicesOfPersistentFiltersUsedByThisComponent.GetDirectValueByRef(index),
+                        _persistentEntityFilters, filterContextId);
+
+                    return true;
+                }
+
+                enumerator = default;
+                return false;
+            }
+
+            public struct EntityFilterCollectionsEnumerator
+            {
+                public EntityFilterCollectionsEnumerator(NativeDynamicArrayCast<int> getDirectValueByRef,
                     SharedSveltoDictionaryNative<long, EntityFilterCollection> sharedSveltoDictionaryNative) : this()
                 {
                     _getDirectValueByRef          = getDirectValueByRef;
                     _sharedSveltoDictionaryNative = sharedSveltoDictionaryNative;
                 }
 
-                public EntityFilterCollectionEnumerator GetEnumerator()
+                public EntityFilterCollectionsEnumerator GetEnumerator()
                 {
                     return this;
                 }
 
                 public bool MoveNext()
                 {
-                    if (_currentIndex++ < _getDirectValueByRef.count)
+                    if (_currentIndex < _getDirectValueByRef.count)
+                    {
+                        _currentIndex++;
+                        
                         return true;
+                    }
 
                     return false;
                 }
@@ -227,6 +269,43 @@ namespace Svelto.ECS
                 readonly SharedSveltoDictionaryNative<long, EntityFilterCollection> _sharedSveltoDictionaryNative;
                 int                                                                 _currentIndex;
             }
+            
+            public struct EntityFilterCollectionsWithContextEnumerator
+            {
+                public EntityFilterCollectionsWithContextEnumerator(NativeDynamicArrayCast<int> getDirectValueByRef,
+                    SharedSveltoDictionaryNative<long, EntityFilterCollection> sharedSveltoDictionaryNative,
+                    FilterContextID filterContextId) : this()
+                {
+                    _getDirectValueByRef          = getDirectValueByRef;
+                    _sharedSveltoDictionaryNative = sharedSveltoDictionaryNative;
+                    _filterContextId         = filterContextId;
+                }
+            
+                public EntityFilterCollectionsWithContextEnumerator GetEnumerator()
+                {
+                    return this;
+                }
+            
+                public bool MoveNext()
+                {
+                    while (_currentIndex++ < _getDirectValueByRef.count &&
+                           _sharedSveltoDictionaryNative.GetDirectValueByRef((uint)_currentIndex - 1).combinedFilterID
+                              .contextID.id != _filterContextId.id) ;
+                            
+                    if (_currentIndex - 1 < _getDirectValueByRef.count) 
+                        return true;
+                    
+                    return false;
+                }
+            
+                public ref EntityFilterCollection Current =>
+                    ref _sharedSveltoDictionaryNative.GetDirectValueByRef((uint)_currentIndex - 1);
+            
+                readonly NativeDynamicArrayCast<int>                                _getDirectValueByRef;
+                readonly SharedSveltoDictionaryNative<long, EntityFilterCollection> _sharedSveltoDictionaryNative;
+                readonly FilterContextID                                            _filterContextId;
+                int                                                                 _currentIndex;
+            }
 
             /// <summary>
             /// Creates a transient filter. Transient filters are deleted after each submission
@@ -234,18 +313,33 @@ namespace Svelto.ECS
             /// <typeparam name="T"></typeparam>
             /// <returns></returns>
             public ref EntityFilterCollection GetOrCreateTransientFilter<T>(CombinedFilterID filterID)
-                where T : unmanaged, IEntityComponent
+                where T : unmanaged, IBaseEntityComponent
             {
                 var combineFilterIDs = Internal_FilterHelper.CombineFilterIDs<T>(filterID);
 
                 if (_transientEntityFilters.TryFindIndex(combineFilterIDs, out var index))
                     return ref _transientEntityFilters.GetDirectValueByRef(index);
 
-                var filterCollection = EntityFilterCollection.Create();
+                var filterCollection = new EntityFilterCollection(filterID);
 
                 _transientEntityFilters.Add(combineFilterIDs, filterCollection);
 
                 return ref _transientEntityFilters.GetDirectValueByRef((uint)(_transientEntityFilters.count - 1));
+            }
+
+            public bool TryGetTransientFilter<T>(CombinedFilterID filterID, out EntityFilterCollection entityCollection)
+                where T : unmanaged, IBaseEntityComponent
+            {
+                var combineFilterIDs = Internal_FilterHelper.CombineFilterIDs<T>(filterID);
+
+                if (_transientEntityFilters.TryFindIndex(combineFilterIDs, out var index))
+                {
+                    entityCollection = _transientEntityFilters.GetDirectValueByRef(index);
+                    return true;
+                }
+
+                entityCollection = default;
+                return false;
             }
 
             readonly SharedSveltoDictionaryNative<long, EntityFilterCollection> _persistentEntityFilters;
