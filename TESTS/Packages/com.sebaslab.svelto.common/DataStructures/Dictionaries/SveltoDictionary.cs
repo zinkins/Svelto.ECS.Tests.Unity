@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -371,6 +372,7 @@ namespace Svelto.DataStructures
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         bool AddValue(TKey key, out uint indexSet)
         {
             int  hash        = key.GetHashCode(); //IEquatable doesn't enforce the override of GetHashCode
@@ -390,9 +392,6 @@ namespace Svelto.DataStructures
                 int currentValueIndex = valueIndex;
                 do
                 {
-                    //must check if the key already exists in the dictionary
-                    //Comparer<TKey>.default needs to create a new comparer, so it is much slower
-                    //than assuming that Equals is implemented through IEquatable
                     ref var fasterDictionaryNode = ref _valuesInfo[currentValueIndex];
                     if (fasterDictionaryNode.hashcode == hash && fasterDictionaryNode.key.Equals(key) == true)
                     {
@@ -435,19 +434,20 @@ namespace Svelto.DataStructures
 
         void ResizeBucket(uint newSize)
         {
-            uint bucketIndex;
             //we need more space and less collisions
-            _buckets.Resize((uint)HashHelpers.Expand((int)newSize), false);
+            _buckets.Resize((uint)HashHelpers.Expand((int)newSize), false, true);
             _collisions               = 0;
             _fastModBucketsMultiplier = HashHelpers.GetFastModMultiplier((uint)_buckets.capacity);
+            var bucketsCapacity = (uint)_buckets.capacity;
 
             //we need to get all the hash code of all the values stored so far and spread them over the new bucket
             //length
-            for (int newValueIndex = 0; newValueIndex < _freeValueCellIndex; newValueIndex++)
+            var freeValueCellIndex = _freeValueCellIndex;
+            for (int newValueIndex = 0; newValueIndex < freeValueCellIndex; ++newValueIndex)
             {
                 //get the original hash code and find the new bucketIndex due to the new length
-                ref var valueInfoNode = ref _valuesInfo[newValueIndex];
-                bucketIndex = Reduce((uint)valueInfoNode.hashcode, (uint)_buckets.capacity, _fastModBucketsMultiplier);
+                ref var valueInfoNode   = ref _valuesInfo[newValueIndex];
+                var    bucketIndex = Reduce((uint)valueInfoNode.hashcode, bucketsCapacity, _fastModBucketsMultiplier);
                 //bucketsIndex can be -1 or a next value. If it's -1 means no collisions. If there is collision,
                 //we create a new node which prev points to the old one. Old one next points to the new one.
                 //the bucket will now points to the new one
@@ -457,7 +457,14 @@ namespace Svelto.DataStructures
                 //update the bucket index to the index of the current item that share the bucketIndex
                 //(last found is always the one in the bucket)
                 _buckets[bucketIndex] = newValueIndex + 1;
-                if (existingValueIndex != -1)
+                if (existingValueIndex == -1)
+                {
+                    //ok nothing was indexed, the bucket was empty. We need to update the previous
+                    //values of next and previous
+                    valueInfoNode.next     = -1;
+                    valueInfoNode.previous = -1;
+                }
+                else
                 {
                     //oops a value was already being pointed by this cell in the new bucket list,
                     //it means there is a collision, problem
@@ -468,13 +475,6 @@ namespace Svelto.DataStructures
                     valueInfoNode.next     = -1;
                     //and update the previous next index to the new one
                     _valuesInfo[existingValueIndex].next = newValueIndex;
-                }
-                else
-                {
-                    //ok nothing was indexed, the bucket was empty. We need to update the previous
-                    //values of next and previous
-                    valueInfoNode.next     = -1;
-                    valueInfoNode.previous = -1;
                 }
             }
         }
@@ -703,31 +703,35 @@ namespace Svelto.DataStructures
             this._freeValueCellIndex = otherDicKeys._freeValueCellIndex;
         }
         
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void ResizeIfNeeded()
         {
             if (_freeValueCellIndex == _values.capacity)
             {
                 var expandPrime = HashHelpers.Expand((int)_freeValueCellIndex);
 
-                _values.Resize((uint)expandPrime);
-                _valuesInfo.Resize((uint)expandPrime);
+                _values.Resize((uint)expandPrime, true, false);
+                _valuesInfo.Resize((uint)expandPrime, true, false);
             }
         }
         
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void ResizeStorage(uint size)
         {
             var expandPrime = HashHelpers.Expand((int)size);
 
-            _values.Resize((uint)expandPrime);
-            _valuesInfo.Resize((uint)expandPrime);
+            _values.Resize((uint)expandPrime, true, false);
+            _valuesInfo.Resize((uint)expandPrime, true, false);
             ResizeBucket(size);
         }
+
+        static readonly bool Is64BitProcess = Environment.Is64BitProcess; 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static uint Reduce(uint hashcode, uint N, ulong fastModBucketsMultiplier)
         {
             if (hashcode >= N) //is the condition return actually an optimization?
-                return Environment.Is64BitProcess
+                return Is64BitProcess
                     ? HashHelpers.FastMod(hashcode, N, fastModBucketsMultiplier)
                     : hashcode % N;
 
