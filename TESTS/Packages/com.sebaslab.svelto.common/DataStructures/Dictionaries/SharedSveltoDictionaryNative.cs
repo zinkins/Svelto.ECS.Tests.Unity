@@ -30,9 +30,8 @@ namespace Svelto.DataStructures.Native
                 new SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>, NativeStrategy<TValue>,
                     NativeStrategy<int>>(size, allocatorStrategy);
 
-            _sharedDictionary =
-                MemoryUtilities
-                   .Alloc<SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>,
+            _sharedDictionary = 
+                MemoryUtilities.Alloc<SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>,
                         NativeStrategy<TValue>, NativeStrategy<int>>>(1, allocatorStrategy);
 
             _allocatorStrategy = allocatorStrategy;

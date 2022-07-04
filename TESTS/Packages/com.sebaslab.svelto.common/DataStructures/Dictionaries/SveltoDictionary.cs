@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -61,11 +60,18 @@ namespace Svelto.DataStructures
     {
         static SveltoDictionary()
         {
+            TestGetHashCode();
+        }
+        
+#if UNITY_BURST            
+        [Unity.Burst.BurstDiscard]
+#endif
+        static void TestGetHashCode()
+        {
             try
             {
                 if (typeof(TKey).GetMethod("GetHashCode"
-                                         , BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-                 == null)
+                                         , BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly) == null)
                     Svelto.Console.LogWarning(typeof(TKey).Name
                                             + " does not implement GetHashCode -> This will cause unwanted allocations (boxing)");
             }

@@ -1,18 +1,13 @@
-//#define ENABLE_COMPILING_ERROR
-
 using System;
 using NUnit.Framework;
-using Svelto.Common;
 using Svelto.DataStructures;
 using Svelto.DataStructures.Native;
 using Svelto.ECS;
-using Svelto.ECS.DataStructures;
 using Svelto.ECS.Native;
 using Svelto.ECS.Schedulers;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
-using UnityEngine.ParticleSystemJobs;
 
 public class TestsForBurstTeam
 {
@@ -47,18 +42,7 @@ public class TestsForBurstTeam
 
         Assert.Pass();
     }
-#if ENABLE_COMPILING_ERROR
-    [Test]
-    public void TestBurstFailsCompileCode()
-    {
-        new ThisCodeWontCompile
-        {
-        }.Run();
-        
-        Assert.Pass();
-    }
-#endif
-    
+
     [Test]
     //This test will fail, but only the first time it runs!
     public void TestCreatingAndModifyingFiltersInsideJob()
@@ -175,46 +159,7 @@ public class TestsForBurstTeam
             dictionary.Dispose();
         }
     }
-
-    //This code will generate this error (you can check it in the inspector):
-    //todo:warningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarning
-    //please be sure to disable it in order to run the other tests
-    //todo:warningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarningwarning
-    //     Unexpected exception System.Exception: Error while hashing 0x60002D1 in Svelto.ECS, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null ---> System.NotSupportedException: Specified method is not supported.
-    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitILType (Burst.Compiler.IL.Hashing.Types.ILType ilType) [0x00193] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitTypeSpecification (Burst.Compiler.IL.Hashing.CacheRuntime.Metadata.CachedTypeSpecification& cachedTypeSpecification, Burst.Compiler.IL.Hashing.ILGenericContext genericContext) [0x00008] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.HashMethodDefinition (Burst.Compiler.IL.Hashing.CacheRuntime.ToVisit& itemToVisit) [0x001cb] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitItem (Burst.Compiler.IL.Hashing.CacheRuntime.ToVisit& itemToVisit) [0x000c7] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //    --- End of inner exception stack trace ---
-    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.VisitItem (Burst.Compiler.IL.Hashing.CacheRuntime.ToVisit& itemToVisit) [0x000ff] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.GetHashImpl () [0x00126] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //   at Burst.Compiler.IL.Hashing.CacheRuntime.ILFinalHashCalculator.GetHash (Mono.Cecil.MethodReference[] methodReferences, Burst.Compiler.IL.Hashing.CacheRuntime.HashCacheAssemblyStore assemblyStore, zzzUnity.Burst.CodeGen.AssemblyLoader assemblyLoader, Burst.Compiler.IL.NativeCompilerOptions options, System.Action`2[T1,T2] onVisitItem) [0x0000c] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //   at Burst.Compiler.IL.NativeCompiler.ComputeHash () [0x0004e] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //   at Burst.Compiler.IL.Jit.JitCompiler.CompileMethodInternal (Burst.Compiler.IL.Jit.JitResult result, System.Collections.Generic.List`1[T] methodsToCompile, Burst.Compiler.IL.Jit.JitOptions jitOptions) [0x0017f] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //   at Burst.Compiler.IL.Jit.JitCompiler.CompileMethods (Burst.Compiler.IL.Jit.JitMethodGroupRequest& request, Burst.Compiler.IL.Jit.JitCompilationRequestType requestType) [0x00209] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //   at Burst.Compiler.IL.Jit.JitCompiler.CompileMethod (Burst.Compiler.IL.Jit.MethodReferenceWithMethodRefString method, Burst.Compiler.IL.Jit.JitOptions jitOptions, Burst.Compiler.IL.Jit.JitCompilationRequestType requestType) [0x00023] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //   at Burst.Compiler.IL.Jit.JitCompilerService+CompilerThreadContext.Compile (Burst.Compiler.IL.Jit.JitCompilerService+CompileJob job, Burst.Compiler.IL.Jit.JitCompilationRequestType requestType) [0x00491] in <b6aa8fdf6d8144e588cc59c2555fb2d5>:0 
-    //
-    // While compiling job: System.Void Unity.Jobs.IJobForExtensions/ForJobStruct`1<TestsForBurstTeam/ThisCodeWontCompile>::Execute(T&,System.IntPtr,System.IntPtr,Unity.Jobs.LowLevel.Unsafe.JobRanges&,System.Int32)
-    // at <empty>:line 0
-#if ENABLE_COMPILING_ERROR
-    [BurstCompile]
-    struct ThisCodeWontCompile : IJob
-    {
-        public ExclusiveGroupStruct     @group;
-        public EntitiesDB.SveltoFilters filters;
-        public NativeRefWrapperType     typeRef;
     
-        public void Execute()
-        {
-            var filter = filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(
-                new EntitiesDB.SveltoFilters.CombinedFilterID(0, new EntitiesDB.SveltoFilters.ContextID(1)), typeRef);
-            
-            filter.Add(new EGID((uint)0, TestGroupA), (uint)0);
-        }
-    }
-#endif
-
     [BurstCompile]
     //This job will actually allocate the filter it's working with and then it will populate it.
     //However after the first time this job runs, for some reason the filter is found empty. 
@@ -242,7 +187,6 @@ public class TestsForBurstTeam
         public EntitiesDB.SveltoFilters filters;
         public FilterContextID          filterContextId;
         public int                             filterID;
-
 
         public void Execute()
         {

@@ -42,6 +42,7 @@
   </PropertyGroup>
   <ItemGroup>
      <Compile Include="Assets\Tests\Tests\Tests.cs" />
+     <Compile Include="Assets\Tests\Tests\NativeOperations.cs" />
      <Compile Include="Assets\Tests\Tests\NativeEntityFactoryTests.cs" />
      <Compile Include="Assets\Tests\Tests\NativeFilterTests.cs" />
      <None Include="Assets\Tests\Tests\Tests.asmdef" />

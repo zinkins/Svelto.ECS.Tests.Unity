@@ -1,4 +1,5 @@
 #if UNITY_NATIVE
+using System.Runtime.CompilerServices;
 using Svelto.ECS.DataStructures;
 
 namespace Svelto.ECS.Native
@@ -12,6 +13,7 @@ namespace Svelto.ECS.Native
             _entityLocator     = entityLocator;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public NativeEntityInitializer BuildEntity
             (uint eindex, ExclusiveBuildGroup exclusiveBuildGroup, int threadIndex)
         {
@@ -30,6 +32,7 @@ namespace Svelto.ECS.Native
             return new NativeEntityInitializer(bagPerEntityPerThread, index, reference);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public NativeEntityInitializer BuildEntity(EGID egid, int threadIndex)
         {
             return BuildEntity(egid.entityID, egid.groupID, threadIndex);
