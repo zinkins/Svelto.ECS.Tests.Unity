@@ -13,7 +13,7 @@ namespace Svelto.ECS.Internal
         (in SveltoDictionary<uint, TValue, Strategy1, Strategy2, Strategy3> fromDictionary
        , ITypeSafeDictionary<TValue> toDic
 #if SLOW_SVELTO_SUBMISSION
-, in EnginesRoot.EntityReferenceMap entityLocator
+, in EntityReferenceMap entityLocator
 #endif
        , ExclusiveGroupStruct toGroupID) where Strategy1 : struct, IBufferStrategy<SveltoDictionaryNode<uint>>
                                          where Strategy2 : struct, IBufferStrategy<TValue>

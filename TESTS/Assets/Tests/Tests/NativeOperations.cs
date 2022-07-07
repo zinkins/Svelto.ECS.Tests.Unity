@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using Svelto.ECS;
 using Svelto.ECS.Schedulers;
+using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 
 public class SveltoUnitTest
@@ -28,14 +29,10 @@ public class SveltoUnitTest
     {
         var nativeFactory = _factory.ToNative<TestDescriptor>();
         var entity1Init   = nativeFactory.BuildEntity(new EGID(1, Group.TestGroupA), threadIndex);
+        ref var selfReference = ref entity1Init.Init(new NativeSelfReferenceComponent());
+        
         var entity2Init   = nativeFactory.BuildEntity(new EGID(2, Group.TestGroupA), threadIndex);
-
-        entity1Init.Init(new NativeSelfReferenceComponent()
-        {
-            value = entity2Init.reference
-        });
-
-        _scheduler.SubmitEntities();
+        selfReference.value = entity2Init.reference;
 
         Assert.DoesNotThrow(_scheduler.SubmitEntities);
     }

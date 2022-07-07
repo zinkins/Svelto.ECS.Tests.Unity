@@ -152,7 +152,7 @@ namespace Svelto.ECS.Internal
         public void AddEntitiesToDictionary
         (ITypeSafeDictionary toDictionary, ExclusiveGroupStruct groupId
 #if SLOW_SVELTO_SUBMISSION
-               , in EnginesRoot.EntityReferenceMap entityLocator
+               , in EntityReferenceMap entityLocator
 #endif
         )
         {

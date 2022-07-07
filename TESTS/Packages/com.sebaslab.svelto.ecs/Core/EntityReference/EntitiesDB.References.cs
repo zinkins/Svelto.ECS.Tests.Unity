@@ -17,7 +17,7 @@ namespace Svelto.ECS
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EnginesRoot.EntityReferenceMap GetEntityReferenceMap()
+        public EntityReferenceMap GetEntityReferenceMap()
         {
             return _entityReferencesMap;
         }

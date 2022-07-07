@@ -16,16 +16,18 @@ namespace Svelto.ECS.Native
             _reference    = reference;
         }
 
-        public void Init<T>(in T component) where T : unmanaged, IEntityComponent
+        public ref T Init<T>(in T component) where T : unmanaged, IEntityComponent
         {
-            uint id = EntityComponentID<T>.ID.Data;
+            uint componentID = EntityComponentID<T>.ID.Data;
 
-            _unsafeBuffer.AccessReserved<uint>(_index)++; //number of components added so far
+            _unsafeBuffer.AccessReserved<uint>(_index)++; //number of components initialised by the user so far
 
             //Since NativeEntityInitializer is a ref struct, it guarantees that I am enqueueing components of the
             //last entity built
-            _unsafeBuffer.Enqueue(id);
-            _unsafeBuffer.Enqueue(component);
+            _unsafeBuffer.Enqueue(componentID); //to know what component it's being stored
+            _unsafeBuffer.ReserveEnqueue<T>(out var index) = component;
+
+            return ref _unsafeBuffer.AccessReserved<T>(index);
         }
 
         public EntityReference reference => _reference;

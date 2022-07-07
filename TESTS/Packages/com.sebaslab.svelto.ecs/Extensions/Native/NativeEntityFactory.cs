@@ -6,10 +6,10 @@ namespace Svelto.ECS.Native
 {
     public readonly struct NativeEntityFactory
     {
-        internal NativeEntityFactory(AtomicNativeBags addOperationQueue, int index, EnginesRoot.EntityReferenceMap entityLocator)
+        internal NativeEntityFactory(AtomicNativeBags addOperationQueues, int index, EntityReferenceMap entityLocator)
         {
             _index             = index;
-            _addOperationQueue = addOperationQueue;
+            _addOperationQueues = addOperationQueues;
             _entityLocator     = entityLocator;
         }
 
@@ -18,18 +18,20 @@ namespace Svelto.ECS.Native
             (uint eindex, ExclusiveBuildGroup exclusiveBuildGroup, int threadIndex)
         {
             EntityReference reference = _entityLocator.ClaimReference();
-            NativeBag bagPerEntityPerThread = _addOperationQueue.GetBuffer(threadIndex + 1);
+            var             egid      = new EGID(eindex, exclusiveBuildGroup);
 
-            bagPerEntityPerThread.Enqueue(_index); //each native ECS native operation is stored in an array, each request to perform a native operation in a queue. _index is the index of the operation in the array that will be dequeued later 
-            bagPerEntityPerThread.Enqueue(new EGID(eindex, exclusiveBuildGroup));
+            NativeBag bagPerEntityPerThread = _addOperationQueues.GetBag(threadIndex + 1); //fetch the Queue linked to this thread
+
+            bagPerEntityPerThread.Enqueue(_index); //store the index to the descriptor of the entity we are building. the descriptor is stored in the _nativeAddOperations array 
+            bagPerEntityPerThread.Enqueue(egid);
             bagPerEntityPerThread.Enqueue(reference);
             
-            //NativeEntityInitializer is quite a complex beast. It holds the starting values of the component set by the user. These components must be later dequeued and in order to know how many components
-            //must be dequeued, a count must be used. The space to hold the count is then reserved in the queue and index will be used access the count later on through NativeEntityInitializer so it can increment it.
-            //index is not the number of components of the entity, it's just the number of components that the user decide to initialise
-            bagPerEntityPerThread.ReserveEnqueue<uint>(out var index) = 0;
+            //NativeEntityInitializer is quite a complex beast. It holds the initialization values of the component set by the user. These components must be later dequeued and in order to know how many components
+            //must be dequeued, a count must be used. The space to hold the count is reserved and countPosition will be used to access the count through NativeEntityInitializer.
+            //the count value is not the number of components of the entity, it's just the number of components that the user decides to initialise
+            bagPerEntityPerThread.ReserveEnqueue<uint>(out var countPosition) = 0;
 
-            return new NativeEntityInitializer(bagPerEntityPerThread, index, reference);
+            return new NativeEntityInitializer(bagPerEntityPerThread, countPosition, reference);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -38,8 +40,8 @@ namespace Svelto.ECS.Native
             return BuildEntity(egid.entityID, egid.groupID, threadIndex);
         }
 
-        readonly EnginesRoot.EntityReferenceMap  _entityLocator;
-        readonly AtomicNativeBags        _addOperationQueue;
+        readonly EntityReferenceMap  _entityLocator;
+        readonly AtomicNativeBags        _addOperationQueues;
         readonly int                     _index;
     }
 }

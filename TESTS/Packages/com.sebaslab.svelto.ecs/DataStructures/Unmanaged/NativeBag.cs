@@ -31,7 +31,7 @@ namespace Svelto.ECS.DataStructures
                 {
                     BasicTests();
                     
-                    using (_threadSentinel.TestThreadSafety())
+                  //  using (_threadSentinel.TestThreadSafety())
                     {
                         return _queue->size;
                     }
@@ -48,7 +48,7 @@ namespace Svelto.ECS.DataStructures
                 {
                     BasicTests();
                     
-                    using (_threadSentinel.TestThreadSafety())
+                //    using (_threadSentinel.TestThreadSafety())
                     {
                         return _queue->capacity;
                     }
@@ -74,7 +74,7 @@ namespace Svelto.ECS.DataStructures
             {
                 BasicTests();
 
-                using (_threadSentinel.TestThreadSafety())
+           //     using (_threadSentinel.TestThreadSafety())
                 {
                     if (_queue == null || _queue->ptr == null)
                         return true;
@@ -91,7 +91,7 @@ namespace Svelto.ECS.DataStructures
             {
                 BasicTests();
 
-                using (_threadSentinel.TestThreadSafety())
+           //     using (_threadSentinel.TestThreadSafety())
                 {
                     _queue->Dispose();
                     MemoryUtilities.Free((IntPtr)_queue, _queue->allocator);
@@ -111,7 +111,7 @@ namespace Svelto.ECS.DataStructures
 
                 var sizeOf = MemoryUtilities.SizeOf<T>();
                 
-                using (_threadSentinel.TestThreadSafety())
+            //    using (_threadSentinel.TestThreadSafety())
                 {
                     if (_queue->availableSpace - sizeOf < 0)
                     {
@@ -131,7 +131,7 @@ namespace Svelto.ECS.DataStructures
             {
                 BasicTests();
 
-                using (_threadSentinel.TestThreadSafety())
+              //  using (_threadSentinel.TestThreadSafety())
                 {
                     var sizeOf = MemoryUtilities.SizeOf<T>();
                     if (_queue->availableSpace - sizeOf < 0)
@@ -151,7 +151,7 @@ namespace Svelto.ECS.DataStructures
             {
                 BasicTests();
 
-                using (_threadSentinel.TestThreadSafety())
+             //   using (_threadSentinel.TestThreadSafety())
                 {
                     _queue->Clear();
                 }
@@ -164,7 +164,7 @@ namespace Svelto.ECS.DataStructures
             {
                 BasicTests();
 
-                using (_threadSentinel.TestThreadSafety())
+               // using (_threadSentinel.TestThreadSafety())
                 {
                     return _queue->Dequeue<T>();
                 }
@@ -177,7 +177,7 @@ namespace Svelto.ECS.DataStructures
             {
                 BasicTests();
 
-                using (_threadSentinel.TestThreadSafety())
+            //    using (_threadSentinel.TestThreadSafety())
                 {
                     return ref _queue->AccessReserved<T>(reservedIndex);
                 }
@@ -191,7 +191,7 @@ namespace Svelto.ECS.DataStructures
                 throw new Exception("SimpleNativeArray: null-access");
         }
         
-        readonly Sentinel _threadSentinel;
+//        readonly Sentinel _threadSentinel;
 
 #if UNITY_COLLECTIONS || UNITY_JOBS || UNITY_BURST
 #if UNITY_BURST

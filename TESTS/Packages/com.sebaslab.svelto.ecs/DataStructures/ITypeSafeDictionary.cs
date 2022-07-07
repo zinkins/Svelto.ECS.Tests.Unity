@@ -26,7 +26,7 @@ namespace Svelto.ECS.Internal
         void AddEntitiesToDictionary
         (ITypeSafeDictionary toDictionary, ExclusiveGroupStruct groupId
 #if SLOW_SVELTO_SUBMISSION                             
-       , in EnginesRoot.EntityReferenceMap entityLocator
+       , in EntityReferenceMap entityLocator
 #endif         
          );
         void RemoveEntitiesFromDictionary

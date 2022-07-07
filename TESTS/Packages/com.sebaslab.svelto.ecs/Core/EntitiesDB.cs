@@ -12,7 +12,7 @@ namespace Svelto.ECS
 {
     public partial class EntitiesDB
     {
-        internal EntitiesDB(EnginesRoot enginesRoot, EnginesRoot.EntityReferenceMap entityReferencesMap)
+        internal EntitiesDB(EnginesRoot enginesRoot, EntityReferenceMap entityReferencesMap)
         {
             _enginesRoot         = enginesRoot;
             _entityReferencesMap = entityReferencesMap;
@@ -327,6 +327,6 @@ namespace Svelto.ECS
         FasterDictionary<RefWrapperType, FasterDictionary<ExclusiveGroupStruct, ITypeSafeDictionary>> groupsPerComponent =>
             _enginesRoot._groupsPerEntity;
 
-        EnginesRoot.EntityReferenceMap _entityReferencesMap;
+        EntityReferenceMap _entityReferencesMap;
     }
 }
