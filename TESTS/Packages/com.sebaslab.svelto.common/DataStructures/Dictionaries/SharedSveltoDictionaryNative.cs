@@ -30,8 +30,9 @@ namespace Svelto.DataStructures.Native
                 new SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>, NativeStrategy<TValue>,
                     NativeStrategy<int>>(size, allocatorStrategy);
 
-            _sharedDictionary = 
-                MemoryUtilities.Alloc<SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>,
+            _sharedDictionary =
+                MemoryUtilities
+                   .NativeAlloc<SveltoDictionary<TKey, TValue, NativeStrategy<SveltoDictionaryNode<TKey>>,
                         NativeStrategy<TValue>, NativeStrategy<int>>>(1, allocatorStrategy);
 
             _allocatorStrategy = allocatorStrategy;
@@ -85,12 +86,6 @@ namespace Svelto.DataStructures.Native
         public void Clear()
         {
             dictionary.Clear();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void FastClear()
-        {
-            dictionary.FastClear();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -182,7 +177,7 @@ namespace Svelto.DataStructures.Native
 #endif
             dictionary.Dispose();
 
-            MemoryUtilities.Free(_sharedDictionary, _allocatorStrategy);
+            MemoryUtilities.NativeFree(_sharedDictionary, _allocatorStrategy);
             _sharedDictionary = IntPtr.Zero;
         }
 
@@ -202,6 +197,9 @@ namespace Svelto.DataStructures.Native
         }
 
 #if UNITY_COLLECTIONS || UNITY_JOBS || UNITY_BURST
+#if UNITY_BURST
+        [Unity.Burst.NoAlias]
+#endif
         [Unity.Collections.LowLevel.Unsafe.NativeDisableUnsafePtrRestriction]
 #endif
         IntPtr _sharedDictionary;

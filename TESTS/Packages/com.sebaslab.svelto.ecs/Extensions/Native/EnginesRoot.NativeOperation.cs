@@ -3,7 +3,6 @@ using System;
 using DBC.ECS;
 using Svelto.Common;
 using Svelto.DataStructures;
-using Svelto.ECS.DataStructures;
 using Svelto.ECS.Internal;
 using Svelto.ECS.Native;
 
@@ -125,6 +124,7 @@ namespace Svelto.ECS
                         CheckAddEntityID(egid, entityDescriptorType, nativeOperation.caller);
 #endif
 
+                        _entityLocator.SetReference(reference, egid);
                         //todo: I reckon is not necessary to carry the components array in the native operation, it's enough to know the descriptor type
                         //however I guess this can work only if the type is hashed, which could be done with the burst type hash
                         var dic = EntityFactory.BuildGroupedEntities(egid, _groupedEntityToAdd
