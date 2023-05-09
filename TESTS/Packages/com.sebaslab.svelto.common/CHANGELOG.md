@@ -17,7 +17,7 @@ All notable changes to this project will be documented in this file. Changes are
 * FasterList extension to convert to Span and ByteSpan
 * Fix reported bugs
 * Minor Svelto Dictionary improvements
-* Added ValueContainer, a simple int, Tvalue dictionary based on sparse set. It has very specific use cases at the moment. Mainly to be used for the new ECS OOP Abstraction resoruce manager
+* Added ValueContainer, a simple int, TValue dictionary based on sparse set. It has very specific use cases at the moment. Mainly to be used for the new ECS OOP Abstraction resoruce manager
 
 
 ## [3.3.0] - 04-2022

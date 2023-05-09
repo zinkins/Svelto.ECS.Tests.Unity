@@ -1,6 +1,5 @@
 using System;
 using NUnit.Framework;
-using Svelto.DataStructures;
 using Svelto.DataStructures.Native;
 using Svelto.ECS;
 using Svelto.ECS.Native;
@@ -58,7 +57,6 @@ public class TestsForBurstTeam
         new CreateFilterAndAddEntitiesInFiltersJob
         {
             filters         = filters, group = TestGroupA,
-            typeRef         = new NativeRefWrapperType(new RefWrapperType(typeof(NativeSelfReferenceComponent))),
             filterContextId = _filterContextId
         }.Run();
         
@@ -82,7 +80,6 @@ public class TestsForBurstTeam
         new CreateFilterAndAddEntitiesInFiltersJob
         {
             filters         = filters, group = TestGroupA,
-            typeRef         = new NativeRefWrapperType(new RefWrapperType(typeof(NativeSelfReferenceComponent))),
             filterContextId = _filterContextId
         }.Run();
         
@@ -167,12 +164,11 @@ public class TestsForBurstTeam
     {
         public ExclusiveGroupStruct     @group;
         public EntitiesDB.SveltoFilters filters;
-        public NativeRefWrapperType     typeRef;
         public FilterContextID          filterContextId;
 
         public void Execute()
         {
-            ref var filter = ref filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(1, filterContextId, typeRef);
+            ref var filter = ref filters.GetOrCreatePersistentFilter<NativeSelfReferenceComponent>(1, filterContextId);
 
             for (int index = 0; index < 10; index++)
                 filter.Add(new EGID((uint)index, group), (uint)index);
@@ -186,7 +182,7 @@ public class TestsForBurstTeam
         public ExclusiveGroupStruct     @group;
         public EntitiesDB.SveltoFilters filters;
         public FilterContextID          filterContextId;
-        public int                             filterID;
+        public int                      filterID;
 
         public void Execute()
         {

@@ -20,7 +20,7 @@ namespace Svelto.ECS.SveltoOnDOTS
     /// Submission of Entities to be executed
     /// Svelto Add/Remove callbacks to be called
     /// ISveltoOnDOTSStructuralEngine to be executed
-    /// DOTS ECS engines to executed
+    /// DOTS ECS engines to be executed
     /// Synchronizations engines to be executed (DOTS ECS To Svelto)
     /// </summary>
     [Sequenced(nameof(JobifiedSveltoEngines.SveltoOnDOTS))]
@@ -39,6 +39,12 @@ namespace Svelto.ECS.SveltoOnDOTS
         /// for the user to add pure DOTS ECS SystemBase/ISystem systems to the DOTS ECS world
         /// </summary>
         public World world { get; private set; }
+        
+        /// <summary>
+        /// for the user to be able to explicitly submit entities. When SveltoOnDOTS is used, you must use this way, you cannot
+        /// submit entities directly from the EnginesRoot submission scheduler
+        /// </summary>
+        public ISveltoOnDOTSSubmission submitter => _sveltoDotsEntitiesSubmissionGroup;
 
         public JobHandle Execute(JobHandle inputDeps)
         {
@@ -62,7 +68,11 @@ namespace Svelto.ECS.SveltoOnDOTS
         public void AddSveltoToDOTSSyncEngine(SyncSveltoToDOTSEngine engine)
         {
             //it's a Svelto Engine/DOTS ECS SystemBase so it must be added in the DOTS ECS world AND svelto enginesRoot
+#if UNITY_ECS_100
             world.AddSystemManaged(engine);
+#else            
+            world.AddSystem(engine);
+#endif
 
             _enginesRoot.AddEngine(engine);
 
@@ -72,7 +82,11 @@ namespace Svelto.ECS.SveltoOnDOTS
         public void AddDOTSToSveltoSyncEngine(SyncDOTSToSveltoEngine engine)
         {
             //it's a Svelto Engine/DOTS ECS SystemBase so it must be added in the DOTS ECS world AND svelto enginesRoot
+#if UNITY_ECS_100
             world.AddSystemManaged(engine);
+#else            
+            world.AddSystem(engine);
+#endif
             _enginesRoot.AddEngine(engine);
 
             _syncDotsToSveltoGroup.Add(engine);
@@ -108,7 +122,11 @@ namespace Svelto.ECS.SveltoOnDOTS
             _sveltoDotsEntitiesSubmissionGroup.Add(defaultSveltoOnDotsHandleLifeTimeEngine);
             
             enginesRoot.AddEngine(_sveltoDotsEntitiesSubmissionGroup);
+#if UNITY_ECS_100            
             world.AddSystemManaged(_sveltoDotsEntitiesSubmissionGroup);
+#else
+            world.AddSystem(_sveltoDotsEntitiesSubmissionGroup);
+#endif
             
             //This is the group that handles the DOTS ECS sync systems that copy the svelto entities values to DOTS ECS entities
             _syncSveltoToDotsGroup = new SyncSveltoToDOTSGroup();

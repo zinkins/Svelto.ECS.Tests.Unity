@@ -11,6 +11,9 @@ namespace Svelto.ECS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void SingleSubmission(PlatformProfiler profiler)
         {
+            //clear the data checks before the submission. We want to allow structural changes inside the callbacks
+            ClearChecksForMultipleOperationsOnTheSameEgid();
+            
             _entitiesOperations.ExecuteRemoveAndSwappingOperations(
                 _swapEntities,
                 _removeEntities,
@@ -19,8 +22,9 @@ namespace Svelto.ECS
                 this);
 
             AddEntities(profiler);
-
-            ClearDebugChecks(); //this must be done first as I need the carry the last states after the submission
+            
+            //clear the data checks after the submission, so if structural changes happened inside the callback, the debug structure is reset for the next frame operations
+            ClearChecksForMultipleOperationsOnTheSameEgid();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -42,7 +46,7 @@ namespace Svelto.ECS
         }
 
         static void RemoveEntities(
-            FasterDictionary<ExclusiveGroupStruct, FasterDictionary<RefWrapperType, FasterList<(uint, string)>>>
+            FasterDictionary<ExclusiveGroupStruct, FasterDictionary<ComponentID, FasterList<(uint, string)>>>
                 removeOperations, FasterList<EGID> entitiesRemoved, EnginesRoot enginesRoot)
         {
             using (var sampler = new PlatformProfiler("remove Entities"))
@@ -90,7 +94,7 @@ namespace Svelto.ECS
 
                         foreach (var groupedEntitiesToRemove in entitiesToRemove.value)
                         {
-                            RefWrapperType componentType = groupedEntitiesToRemove.key;
+                            ComponentID componentType = groupedEntitiesToRemove.key;
                             ITypeSafeDictionary fromComponentsDictionary = fromGroupDictionary[componentType];
 
                             FasterList<(uint, string)> entityIDsToRemove = groupedEntitiesToRemove.value;
@@ -157,7 +161,7 @@ namespace Svelto.ECS
             }
         }
 
-        static void SwapEntities(FasterDictionary<ExclusiveGroupStruct, FasterDictionary<RefWrapperType,
+        static void SwapEntities(FasterDictionary<ExclusiveGroupStruct, FasterDictionary<ComponentID,
                 FasterDictionary<ExclusiveGroupStruct, FasterList<(uint, uint, string)>>>> swapEntitiesOperations,
             FasterList<(EGID, EGID)> entitiesIDSwaps, EnginesRoot enginesRoot)
         {
@@ -258,7 +262,7 @@ namespace Svelto.ECS
 
                             //get all the engines linked to TValue
                             if (!enginesRoot._reactiveEnginesSwap.TryGetValue(
-                                    new RefWrapperType(componentType),
+                                    componentType,
                                     out var entityComponentsEngines))
                                 continue;
 
@@ -300,8 +304,7 @@ namespace Svelto.ECS
 
                                 //get all the engines linked to TValue
                                 if (!enginesRoot._reactiveEnginesSwapEx.TryGetValue(
-                                        new RefWrapperType(componentType),
-                                        out var entityComponentsEngines))
+                                        componentType, out var entityComponentsEngines))
                                     continue;
 
                                 ExclusiveGroupStruct toGroup = entitiesInfoToSwap.key;
@@ -350,9 +353,8 @@ namespace Svelto.ECS
                                 {
                                     var type = entityComponentsToSubmit.key;
                                     var fromDictionary = entityComponentsToSubmit.value;
-                                    var wrapper = new RefWrapperType(type);
-
-                                    var toDictionary = GetOrAddTypeSafeDictionary(groupID, groupDB, wrapper, fromDictionary);
+                                    
+                                    var toDictionary = GetOrAddTypeSafeDictionary(groupID, groupDB, type, fromDictionary);
 
                                     //all the new entities are added at the end of each dictionary list, so we can
                                     //just iterate the list using the indices ranges added in the _cachedIndices
@@ -381,9 +383,8 @@ namespace Svelto.ECS
                                 foreach (var entityComponentsToSubmit in groupToSubmit.components)
                                 {
                                     var type = entityComponentsToSubmit.key;
-                                    var wrapper = new RefWrapperType(type);
-
-                                    var toDictionary = GetTypeSafeDictionary(groupID, groupDB, wrapper);
+                                    
+                                    var toDictionary = GetTypeSafeDictionary(groupID, groupDB, type);
                                     enumerator.MoveNext();
                                     toDictionary.ExecuteEnginesAddEntityCallbacksFast(_reactiveEnginesAddEx, groupID, enumerator.Current, in sampler);
                                 }
@@ -461,22 +462,22 @@ namespace Svelto.ECS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void SwapEntitiesBetweenGroups(ExclusiveGroupStruct fromGroupId, ExclusiveGroupStruct toGroupId, PlatformProfiler platformProfiler)
         {
-            FasterDictionary<RefWrapperType, ITypeSafeDictionary> fromGroup = GetDBGroup(fromGroupId);
-            FasterDictionary<RefWrapperType, ITypeSafeDictionary> toGroup = GetOrAddDBGroup(toGroupId);
+            FasterDictionary<ComponentID, ITypeSafeDictionary> fromGroup = GetDBGroup(fromGroupId);
+            FasterDictionary<ComponentID, ITypeSafeDictionary> toGroup = GetOrAddDBGroup(toGroupId);
 
             _entityLocator.UpdateAllGroupReferenceLocators(fromGroupId, toGroupId);
 
             //remove entities from dictionaries
             foreach (var dictionaryOfEntities in fromGroup)
             {
-                RefWrapperType refWrapperType = dictionaryOfEntities.key;
+                var refWrapperType = dictionaryOfEntities.key;
 
                 ITypeSafeDictionary fromDictionary = dictionaryOfEntities.value;
                 ITypeSafeDictionary toDictionary = GetOrAddTypeSafeDictionary(toGroupId, toGroup, refWrapperType, fromDictionary);
 
                 fromDictionary.AddEntitiesToDictionary(toDictionary, toGroupId
 #if SLOW_SVELTO_SUBMISSION
-                                         , this.entityLocator
+                                         , entityLocator
 #endif
                 );
             }
@@ -484,7 +485,7 @@ namespace Svelto.ECS
             //Call all the callbacks
             foreach (var dictionaryOfEntities in fromGroup)
             {
-                RefWrapperType refWrapperType = dictionaryOfEntities.key;
+                var refWrapperType = dictionaryOfEntities.key;
 
                 ITypeSafeDictionary fromDictionary = dictionaryOfEntities.value;
                 ITypeSafeDictionary toDictionary = GetTypeSafeDictionary(toGroupId, toGroup, refWrapperType);
@@ -505,20 +506,20 @@ namespace Svelto.ECS
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ITypeSafeDictionary GetOrAddTypeSafeDictionary(ExclusiveGroupStruct groupId,
-            FasterDictionary<RefWrapperType, ITypeSafeDictionary> groupPerComponentType, RefWrapperType type,
+            FasterDictionary<ComponentID, ITypeSafeDictionary> groupPerComponentType, ComponentID typeID,
             ITypeSafeDictionary fromDictionary)
         {
             //be sure that the TypeSafeDictionary for the entity Type exists
-            if (groupPerComponentType.TryGetValue(type, out ITypeSafeDictionary toEntitiesDictionary) == false)
+            if (groupPerComponentType.TryGetValue(typeID, out ITypeSafeDictionary toEntitiesDictionary) == false)
             {
                 toEntitiesDictionary = fromDictionary.Create();
-                groupPerComponentType.Add(type, toEntitiesDictionary);
+                groupPerComponentType.Add(typeID, toEntitiesDictionary);
             }
 
             {
                 //update GroupsPerEntity
-                if (_groupsPerEntity.TryGetValue(type, out var groupedGroup) == false)
-                    groupedGroup = _groupsPerEntity[type] =
+                if (_groupsPerEntity.TryGetValue(typeID, out var groupedGroup) == false)
+                    groupedGroup = _groupsPerEntity[typeID] =
                         new FasterDictionary<ExclusiveGroupStruct, ITypeSafeDictionary>();
 
                 groupedGroup[groupId] = toEntitiesDictionary;
@@ -529,7 +530,7 @@ namespace Svelto.ECS
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ITypeSafeDictionary GetTypeSafeDictionary(ExclusiveGroupStruct groupID,
-            FasterDictionary<RefWrapperType, ITypeSafeDictionary> @group, RefWrapperType refWrapper)
+            FasterDictionary<ComponentID, ITypeSafeDictionary> @group, ComponentID refWrapper)
         {
             if (@group.TryGetValue(refWrapper, out ITypeSafeDictionary fromTypeSafeDictionary) == false)
             {
@@ -549,12 +550,12 @@ namespace Svelto.ECS
         //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         static readonly
-            Action<FasterDictionary<ExclusiveGroupStruct, FasterDictionary<RefWrapperType,
+            Action<FasterDictionary<ExclusiveGroupStruct, FasterDictionary<ComponentID,
                     FasterDictionary<ExclusiveGroupStruct, FasterList<(uint, uint, string)>>>>, FasterList<(EGID, EGID)>
                , EnginesRoot> _swapEntities;
 
         static readonly Action<
-            FasterDictionary<ExclusiveGroupStruct, FasterDictionary<RefWrapperType, FasterList<(uint, string)>>>,
+            FasterDictionary<ExclusiveGroupStruct, FasterDictionary<ComponentID, FasterList<(uint, string)>>>,
             FasterList<EGID>, EnginesRoot> _removeEntities;
 
         static readonly Action<ExclusiveGroupStruct, EnginesRoot> _removeGroup;

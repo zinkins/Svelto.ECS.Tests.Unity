@@ -1,7 +1,6 @@
 #if UNITY_ECS
 using System.Runtime.CompilerServices;
 using Svelto.DataStructures;
-using Svelto.DataStructures.Native;
 using Svelto.ECS.Internal;
 using Unity.Burst;
 using Unity.Collections;
@@ -21,32 +20,40 @@ namespace Svelto.ECS.SveltoOnDOTS
 
         public EntityArchetype CreateArchetype(params ComponentType[] types)
         {
-            return _EManager.CreateArchetype(types);
+            return EManager.CreateArchetype(types);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetComponent<T>(Entity e, in T component)
                 where T : unmanaged, IComponentData
         {
-            _EManager.SetComponentData(e, component);
+            EManager.SetComponentData(e, component);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetSharedComponent<T>(Entity e, in T component)
                 where T : unmanaged, ISharedComponentData
         {
+#if UNITY_ECS_100
             _EManager.SetSharedComponent(e, component);
+#else            
+            EManager.SetSharedComponentData(e, component);
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Entity CreateDOTSEntityFromSvelto(Entity prefabEntity, ExclusiveGroupStruct groupID, EntityReference reference)
+        public Entity CreateDOTSEntityOnSvelto(Entity prefabEntity, EGID egid)
         {
-            Entity dotsEntity = _EManager.Instantiate(prefabEntity);
+            Entity dotsEntity = EManager.Instantiate(prefabEntity);
 
             //SharedComponentData can be used to group the DOTS ECS entities exactly like the Svelto ones
-            _EManager.AddSharedComponent(dotsEntity, new DOTSSveltoGroupID(groupID));
-            _EManager.AddComponent<DOTSSveltoReference>(dotsEntity);
-            _EManager.SetComponentData(dotsEntity, new DOTSSveltoReference(reference));
+#if UNITY_ECS_100
+            _EManager.AddSharedComponent(dotsEntity, new DOTSSveltoGroupID(egid.groupID));
+#else            
+            EManager.AddSharedComponentData(dotsEntity, new DOTSSveltoGroupID(egid.groupID));
+#endif            
+            EManager.AddComponent<DOTSSveltoEGID>(dotsEntity);
+            EManager.SetComponentData(dotsEntity, new DOTSSveltoEGID(egid));
 
             return dotsEntity;
         }
@@ -59,14 +66,18 @@ namespace Svelto.ECS.SveltoOnDOTS
         /// <param name="egid"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Entity CreateDOTSEntityFromSvelto(EntityArchetype archetype, ExclusiveGroupStruct groupID, EntityReference reference)
+        public Entity CreateDOTSEntityOnSvelto(EntityArchetype archetype, EGID egid)
         {
-            Entity dotsEntity = _EManager.CreateEntity(archetype);
+            Entity dotsEntity = EManager.CreateEntity(archetype);
 
             //SharedComponentData can be used to group the DOTS ECS entities exactly like the Svelto ones
-            _EManager.AddSharedComponent(dotsEntity, new DOTSSveltoGroupID(groupID));
-            _EManager.AddComponent<DOTSSveltoReference>(dotsEntity);
-            _EManager.SetComponentData(dotsEntity, new DOTSSveltoReference(reference));
+#if UNITY_ECS_100            
+            _EManager.AddSharedComponent(dotsEntity, new DOTSSveltoGroupID(egid.groupID));
+#else
+            EManager.AddSharedComponentData(dotsEntity, new DOTSSveltoGroupID(egid.groupID));
+#endif
+            EManager.AddComponent<DOTSSveltoEGID>(dotsEntity);
+            EManager.SetComponentData(dotsEntity, new DOTSSveltoEGID(egid));
 
             return dotsEntity;
         }
@@ -79,67 +90,95 @@ namespace Svelto.ECS.SveltoOnDOTS
         /// <param name="wireEgid"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Entity CreateDOTSEntity(EntityArchetype archetype)
+        public Entity CreateDOTSEntity(EntityArchetype archetype)
         {
-            return _EManager.CreateEntity(archetype);
+            return EManager.CreateEntity(archetype);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void DestroyEntity(Entity e)
         {
-            _EManager.DestroyEntity(e);
+            EManager.DestroyEntity(e);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RemoveComponent<T>(Entity dotsEntity)
         {
-            _EManager.RemoveComponent<T>(dotsEntity);
+            EManager.RemoveComponent<T>(dotsEntity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddComponent<T>(Entity dotsEntity)
                 where T : unmanaged, IComponentData
         {
-            _EManager.AddComponent<T>(dotsEntity);
+            EManager.AddComponent<T>(dotsEntity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddComponent<T>(Entity dotsEntity, in T component)
                 where T : unmanaged, IComponentData
         {
-            _EManager.AddComponent<T>(dotsEntity);
-            _EManager.SetComponentData(dotsEntity, component);
+            EManager.AddComponent<T>(dotsEntity);
+            EManager.SetComponentData(dotsEntity, component);
+        }
+        
+        public T GetComponent<T>(Entity dotsEntity) where T : unmanaged, IComponentData
+        {
+#if UNITY_ECS_100                        
+            return _EManager.GetComponentData<T>(dotsEntity);
+#else
+            return EManager.GetComponentData<T>(dotsEntity);
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddSharedComponent<T>(Entity dotsEntity, in T component)
                 where T : unmanaged, ISharedComponentData
         {
+#if UNITY_ECS_100               
             _EManager.AddSharedComponent(dotsEntity, component);
+#else
+            EManager.AddSharedComponentData(dotsEntity, component);
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddBuffer<T>(Entity dotsEntity)
                 where T : unmanaged, IBufferElementData
         {
-            _EManager.AddBuffer<T>(dotsEntity);
+            EManager.AddBuffer<T>(dotsEntity);
+        }
+      
+#if !(DEBUG && !PROFILE_SVELTO)
+        [System.Diagnostics.Conditional("NO_SENSE")]    
+#endif
+        public void SetDebugName(Entity dotsEntity, string name)
+        {
+            EManager.SetName(dotsEntity, name);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetSharedComponentBatched<SharedComponentData>(NativeArray<Entity> nativeArray, SharedComponentData SCD)
                 where SharedComponentData : unmanaged, ISharedComponentData
         {
+#if UNITY_ECS_100
             _EManager.SetSharedComponent(nativeArray, SCD);
+#else            
+            for (int i = 0; i < nativeArray.Length; i++)
+            {
+                EManager.SetSharedComponentData(nativeArray[i], SCD);
+            }
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddComponentBatched<T>(NativeArray<Entity> DOTSEntities)
         {
-            _EManager.AddComponent<T>(DOTSEntities);
+            EManager.AddComponent<T>(DOTSEntities);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public NativeArray<Entity> CreateDOTSEntityFromSveltoBatched(Entity prefab, (uint rangeStart, uint rangeEnd) range,
+        NativeArray<Entity> CreateDOTSEntityFromSveltoBatched(Entity prefab, (uint rangeStart, uint rangeEnd) range,
             ExclusiveGroupStruct groupID, NB<DOTSEntityComponent> DOSTEntityComponents)
         {
             unsafe
@@ -147,9 +186,18 @@ namespace Svelto.ECS.SveltoOnDOTS
                 _jobHandle->Complete();
 
                 var count = (int)(range.rangeEnd - range.rangeStart);
-                var nativeArray = _EManager.Instantiate(prefab, count, _EManager.World.UpdateAllocator.ToAllocator);
+                var nativeArray = EManager.Instantiate(prefab, count, EManager.World.UpdateAllocator.ToAllocator);
+                
+#if UNITY_ECS_100                
                 _EManager.AddSharedComponent(nativeArray, new DOTSSveltoGroupID(groupID));
-
+#else
+                for (int i = 0; i < nativeArray.Length; i++)
+                {
+                    EManager.AddSharedComponentData(nativeArray[i], new DOTSSveltoGroupID(groupID));
+                }
+#endif
+                //Set Svelto DOTSEntityComponent dotsEntity field to the DOTS entity
+                //Svelto entities track the DOTS entities through this component
                 var setDOTSEntityComponentsJob = new SetDOTSEntityComponents
                 {
                     sveltoStartIndex = range.rangeStart,
@@ -164,25 +212,26 @@ namespace Svelto.ECS.SveltoOnDOTS
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public NativeArray<Entity> CreateDOTSEntityFromSveltoBatched(Entity prefab, (uint rangeStart, uint rangeEnd) range,
-            ExclusiveGroupStruct groupID, NB<DOTSEntityComponent> DOSTEntityComponents,
-            SharedSveltoDictionaryNative<uint, EntityReference> referenceMap, NativeEntityIDs sveltoIds, out JobHandle creationJob)
+            ExclusiveGroupStruct groupID, NB<DOTSEntityComponent> DOSTEntityComponents, NativeEntityIDs sveltoIds, out JobHandle creationJob)
         {
             var nativeArray = CreateDOTSEntityFromSveltoBatched(prefab, range, groupID, DOSTEntityComponents);
             unsafe
             {
                 var count = (int)(range.rangeEnd - range.rangeStart);
                 
-                _EManager.AddComponent<DOTSSveltoReference>(nativeArray);
+                //DOTS entities track Svelto entities through this component
+                EManager.AddComponent<DOTSSveltoEGID>(nativeArray);
 
-                var SetDOTSSveltoReferenceJob = new SetDOTSSveltoReference
+                //set the DOTSSveltoEGID values
+                var setDOTSSveltoEGIDJob = new SetDOTSSveltoEGID
                 {
                     sveltoStartIndex = range.rangeStart,
                     createdEntities = nativeArray,
-                    entityManager = _EManager,
+                    entityManager = EManager,
                     ids = sveltoIds,
-                    entityReferenceMap = referenceMap,
+                    groupID = groupID
                 };
-                creationJob = *_jobHandle = JobHandle.CombineDependencies(*_jobHandle, SetDOTSSveltoReferenceJob.ScheduleParallel(count, default));
+                creationJob = *_jobHandle = JobHandle.CombineDependencies(*_jobHandle, setDOTSSveltoEGIDJob.ScheduleParallel(count, default));
 
                 return nativeArray;
             }
@@ -200,7 +249,7 @@ namespace Svelto.ECS.SveltoOnDOTS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void DestroyEntitiesBatched(NativeArray<Entity> nativeArray)
         {
-            _EManager.DestroyEntity(nativeArray);
+            EManager.DestroyEntity(nativeArray);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -229,13 +278,13 @@ namespace Svelto.ECS.SveltoOnDOTS
         }
 
         [BurstCompile]
-        public struct SetDOTSSveltoReference: IJobParallelFor
+        public struct SetDOTSSveltoEGID: IJobParallelFor
         {
             public uint sveltoStartIndex;
             [ReadOnly] public NativeArray<Entity> createdEntities;
             [NativeDisableParallelForRestriction] public EntityManager entityManager;
             public NativeEntityIDs ids;
-            public SharedSveltoDictionaryNative<uint, EntityReference> entityReferenceMap;
+            public ExclusiveGroupStruct groupID;
 
             public void Execute(int currentIndex)
             {
@@ -243,10 +292,21 @@ namespace Svelto.ECS.SveltoOnDOTS
                 var dotsEntity = createdEntities[currentIndex];
 
                 entityManager.SetComponentData(
-                    dotsEntity, new DOTSSveltoReference
+                    dotsEntity, new DOTSSveltoEGID
                     {
-                        entityReference = entityReferenceMap[ids[index]]
+                        egid = new EGID(ids[index], groupID)
                     });
+            }
+        }
+        
+        EntityManager EManager
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                DBC.ECS.Check.Require(_EManager != default, "EManager not initialized, did you forget to add the engine as submission engine?");
+                
+                return _EManager;
             }
         }
 
