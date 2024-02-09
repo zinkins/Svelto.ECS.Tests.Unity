@@ -18,7 +18,6 @@ namespace Svelto.ECS
         {
             EntityDescriptorsWarmup.WarmUp();
             GroupHashMap.WarmUp();
-            //SharedDictonary.Init();
             SerializationDescriptorMap.Init();
 
             _swapEntities = SwapEntities;
@@ -38,13 +37,11 @@ namespace Svelto.ECS
         public EnginesRoot(EntitiesSubmissionScheduler entitiesComponentScheduler)
         {
             _entitiesOperations = new EntitiesOperations();
-            _idChecker = new FasterDictionary<ExclusiveGroupStruct, HashSet<uint>>();
 
             _cachedRangeOfSubmittedIndices = new FasterList<(uint, uint)>();
-            _transientEntityIDsLeftAndAffectedByRemoval = new FasterList<uint>();
-            _transientEntityIDsLeftWithoutDuplicates = new FasterDictionary<uint, int>();
-
-            _multipleOperationOnSameEGIDChecker = new FasterDictionary<EGID, uint>();
+            _transientEntityIDsAffectedByRemoveAtSwapBack = new FasterDictionary<uint, uint>();
+            
+            InitDebugChecks();
 #if UNITY_NATIVE //because of the thread count, ATM this is only for unity
             _nativeSwapOperationQueue = new AtomicNativeBags(Allocator.Persistent);
             _nativeRemoveOperationQueue = new AtomicNativeBags(Allocator.Persistent);
@@ -95,6 +92,11 @@ namespace Svelto.ECS
 #endif
         }
 
+        /// <summary>
+        ///Ready is a callback that can be used to signal that an engine is ready to be used because the entitiesDB is now available
+        ///usually engines are ready to be used when they are added to the enginesRoot, but in some special cases, it is possible to
+        ///wait for the user input to signal that engines are ready to be used
+        /// </summary>
         protected EnginesRoot(EntitiesSubmissionScheduler entitiesComponentScheduler,
             EnginesReadyOption enginesWaitForReady): this(entitiesComponentScheduler)
         {
@@ -119,7 +121,7 @@ namespace Svelto.ECS
             return _isDisposed == false;
         }
         
-        public void AddEngine(IEngine engine)
+        public void AddEngine(IEngine engine, bool addSubEngines = true)
         {
             var type = engine.GetType();
             var refWrapper = new RefWrapperType(type);
@@ -152,7 +154,9 @@ namespace Svelto.ECS
 
                 if (engine is IReactOnDispose viewEngineDispose)
                     CheckReactEngineComponents(
+#pragma warning disable CS0618
                         typeof(IReactOnDispose<>), viewEngineDispose, _reactiveEnginesDispose, type.Name);
+#pragma warning restore CS0618
                 
                 if (engine is IReactOnDisposeEx viewEngineDisposeEx)
                     CheckReactEngineComponents(
@@ -160,7 +164,9 @@ namespace Svelto.ECS
 
                 if (engine is IReactOnSwap viewEngineSwap)
 #pragma warning disable CS0612
+#pragma warning disable CS0618
                     CheckReactEngineComponents(typeof(IReactOnSwap<>), viewEngineSwap, _reactiveEnginesSwap, type.Name);
+#pragma warning restore CS0618
 #pragma warning restore CS0612
 
                 if (engine is IReactOnSwapEx viewEngineSwapEx)
@@ -172,7 +178,12 @@ namespace Svelto.ECS
                 
                 if (engine is IReactOnSubmissionStarted submissionEngineStarted)
                     _reactiveEnginesSubmissionStarted.Add(submissionEngineStarted);
-
+                
+                if (addSubEngines)
+                if (engine is IGroupEngine stepGroupEngine)
+                    foreach (var stepEngine in stepGroupEngine.engines)
+                        AddEngine(stepEngine);
+                
                 _enginesTypeSet.Add(refWrapper);
                 _enginesSet.Add(engine);
 
@@ -182,6 +193,7 @@ namespace Svelto.ECS
                 if (engine is IQueryingEntitiesEngine queryableEntityComponentEngine)
                     queryableEntityComponentEngine.entitiesDB = _entitiesDB;
 
+                //Ready is a callback that can be used to signal that the engine is ready to be used because the entitiesDB is now available
                 if (_enginesWaitForReady == EnginesReadyOption.ReadyAsAdded && engine is IGetReadyEngine getReadyEngine)
                     getReadyEngine.Ready();
             }
@@ -243,6 +255,9 @@ namespace Svelto.ECS
 
         void Dispose(bool disposing)
         {
+            if (_isDisposed)
+                return;
+            
             using (var profiler = new PlatformProfiler("Final Dispose"))
             {
                 //Note: The engines are disposed before the the remove callback to give the chance to behave
@@ -252,7 +267,7 @@ namespace Svelto.ECS
                 foreach (var engine in _disposableEngines)
                     try
                     {
-                        if (engine is IDisposingEngine dengine)
+                        if (engine is IDisposableEngine dengine)
                             dengine.isDisposing = true;
                         
                         engine.Dispose();
@@ -424,6 +439,9 @@ namespace Svelto.ECS
         bool _isDisposed;
     }
 
+    //Ready is a callback that can be used to signal that an engine is ready to be used because the entitiesDB is now available
+    //usually engines are ready to be used when they are added to the enginesRoot, but in some special cases, it is possible to
+    //wait for the user input to signal that the engine is ready to be used
     public enum EnginesReadyOption
     {
         ReadyAsAdded,

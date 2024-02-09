@@ -1,6 +1,43 @@
 # Svelto.ECS Changelog
 All notable changes to this project will be documented in this file. Changes are listed in random order of importance.
 
+## [3.5.1] - 01-2024
+
+* Remove UnityEntitySubmissionScheduler, it was never needed, the user can use the standard EntitySubmissionScheduler and tick it manually
+* Dropped the idea to specialise EntitiesSubmissionScheduler. In hindsight it was never necessary.
+* Added better support for range exclusive groups, now they are correctly registered in the group hash map
+* Removed announg Group compound/tag {type} is not sealed warning
+* Merged Cuyi's workaround to be able to query compound groups in abstract engine. Never had the time to implement a better solution
+* It is now possible again to add an entity multiple times inside a filter (it will be overriden)
+* Fixed issue https://github.com/sebas77/Svelto.ECS/issues/123
+* Fixed issue https://github.com/sebas77/Svelto.ECS/issues/122
+* Fixed issue https://github.com/sebas77/Svelto.ECS/issues/121
+* AddEngine now adds engines contained in a GroupEngine to the EnginesGroup optionally~~~~
+
+## [3.5.0] - 09-2023
+
+* Introduced Serialization namespace for the serialization code
+* Unity: dropped 2020 support, minimum requirement is no 2021.3
+* Unity DOTS: added CreateDOTSToSveltoSyncEngine method in SveltoOnDOTSEnginesGroup
+* Refactor: split NB/MB struct from their internal logic that must be used only by the framework. Eventually NB and MB structs must be ref, as they are not supposed to be held (they may become invalid over the time). However due to the current DOTS patterns this is not possible. In future a sentinel pattern will allow to lease these buffers with the assumption that they can't be modified while held (and if a modification happens an exception will throw)
+ * Improved managed EGIDMultiMapper. A MultiMapper can improve components fetching performance
+ * Renamed IDisposableEngine interface to IDisposableEngine
+ * added EntityReference Exists method to validate it against a given entity database
+ * BUG FIXED: IReactOnDisposeEx callbacks were not correctly called
+ * BUG FIXED: fixed serious bug that would pass wrong entities indices to the moveTO callback under specific conditions
+ * Added Group Range functionality to GroupCompound
+ * Added Offset to GroupCompound to know the index of a given group compared to the starting group ID of the compound range (check MiniExample 9, Groupsonly for example)
+ * range and bitmask can be now set only in GroupTag and be inherited by GroupCompounds. GroupCompound bitmasks will be the OR of the group tags bitmasks, while the range will be the larger of the group tags ranges.
+ * entity filters enumerator do not iterate anymore filters belonging to disabled groups
+ * remove operations can now be executed in the same frame of a swap. a Remove will always supersed as Swap operation
+ * engines added to a GreoupEngine are automatically added to the enginesgroup 
+ 
+
+## [3.4.6] - 05-2023
+
+* SveltoOnDOTS bug fixes/improvements
+* Comments and code cleanup
+
 ## [3.4.4] - 04-2023
 
 * refactored internal datastructures 

@@ -27,7 +27,11 @@ namespace Svelto
             _threadSafeStrings = new ThreadLocal<StringBuilder>(() => new StringBuilder(256));
             _loggers           = new FasterList<ILogger>();
 
+#if UNITY_2019_3_OR_NEWER
+            AddLogger(new DefaultUnityLogger());
+#else            
             AddLogger(new SimpleLogger());
+#endif
         }
 
         static StringBuilder _stringBuilder
@@ -160,12 +164,11 @@ namespace Svelto
 
             if (logMessage != null) logMessage(txt, type, e);
         }
-#if UNITY_2021_3_OR_NEWER
+
         public static void CompressLogsToZipAndShow(string zipName)
         {
             _loggers[0]?.CompressLogsToZipAndShow(zipName);
         }
-#endif
 
         public static event Action<string, LogType, Exception> logMessage;
     }

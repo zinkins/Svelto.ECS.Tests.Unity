@@ -109,3 +109,4 @@ Packages/com.sebaslab.svelto.common/Utilities/SharedStatic.cs.meta
 Packages/com.sebaslab.svelto.common/Utilities/ThreadUtility.cs.meta
 Packages/com.sebaslab.svelto.common/Utilities/TypeToString.cs.meta
 Packages/com.sebaslab.svelto.common/Utilities/UnmanagedTypeExtensions.cs.meta
+TESTS/.vsconfig
